@@ -1,0 +1,994 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tilhengerkalkulator</title>
+  <style>
+    :root{
+      --tm-orange:#f07a00;
+      --tm-card:#2b2f33;
+      --tm-card-2:#262a2e;
+      --tm-bg:#ececec;
+
+      --tm-ok:#18a957;
+      --tm-bad:#d64545;
+
+      --radius:16px;
+      --shadow: 0 12px 28px rgba(0,0,0,.18);
+      --shadow-soft: 0 8px 18px rgba(0,0,0,.14);
+      --tm-line: rgba(240,122,0,.65);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #f4f4f4 0%, var(--tm-bg) 55%, #e8e8e8 100%);
+      color:#111;
+    }
+
+    .topbar{
+      height: 12px;
+      background:#3b3b3b;
+      border-bottom: 4px solid var(--tm-orange);
+    }
+
+    .wrap{
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+    .modebar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin: 2px 0 14px;
+    }
+    .chip{
+      border: 1px solid rgba(0,0,0,.12);
+      background:#fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,.06);
+      user-select:none;
+      transition: transform .05s ease, box-shadow .15s ease, border-color .15s ease;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight: 800;
+    }
+    .chip:active{ transform: translateY(1px); }
+    .chip[aria-selected="true"]{
+      border-color: rgba(240,122,0,.55);
+      box-shadow: 0 10px 18px rgba(240,122,0,.15);
+    }
+    .chip-dot{
+      width:10px; height:10px; border-radius:50%;
+      background: rgba(0,0,0,.18);
+    }
+    .chip[aria-selected="true"] .chip-dot{
+      background: var(--tm-orange);
+      box-shadow: 0 0 0 4px rgba(240,122,0,.18);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 14px;
+      align-items:start;
+    }
+    @media (max-width: 940px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--tm-card) 0%, var(--tm-card-2) 100%);
+      color:#fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      left: 14px; right: 14px; top: 10px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(0,0,0,0), var(--tm-line), rgba(0,0,0,0));
+      opacity:.95;
+      pointer-events:none;
+    }
+    .card-inner{ padding: 18px 16px 16px; }
+
+    .card h2{
+      margin: 8px 0 10px;
+      font-size: 16px;
+      letter-spacing:.2px;
+      font-weight: 900;
+    }
+    .hint{
+      margin: -2px 0 10px;
+      color: rgba(255,255,255,.75);
+      font-size: 13px;
+      line-height:1.35;
+    }
+
+    .fields{ display:grid; gap: 10px; margin-top: 10px; }
+    .field{ display:grid; gap: 6px; }
+
+    .labelrow{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    label{ font-weight: 900; font-size: 13px; }
+    .sub{ color: rgba(255,255,255,.7); font-size: 12px; font-weight: 700; }
+
+    input{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(12,14,16,.55);
+      color: #fff;
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+      font-size: 15px;
+    }
+    input::placeholder{ color: rgba(255,255,255,.35); }
+    input:focus{
+      border-color: rgba(240,122,0,.55);
+      box-shadow:
+        inset 0 0 0 1px rgba(240,122,0,.25),
+        0 0 0 4px rgba(240,122,0,.12);
+    }
+
+    .row2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 520px){
+      .row2{ grid-template-columns:1fr; }
+    }
+
+    .btnrow{
+      margin-top: 10px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .btn{
+      cursor:pointer;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 950;
+      letter-spacing:.2px;
+      background: linear-gradient(180deg, #ff8a1d 0%, var(--tm-orange) 100%);
+      color:#141414;
+      box-shadow: 0 10px 18px rgba(240,122,0,.22);
+    }
+    .btn.secondary{
+      background: rgba(255,255,255,.08);
+      color:#fff;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: none;
+    }
+    .btn:active{ transform: translateY(1px); }
+
+    .results{ display:grid; gap: 10px; margin-top: 6px; }
+    .pill{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      box-shadow: var(--shadow-soft);
+    }
+    .pill .k{
+      font-weight: 900;
+      font-size: 13px;
+      color: rgba(255,255,255,.88);
+      line-height:1.25;
+    }
+    .pill .v{
+      font-weight: 950;
+      font-size: 20px;
+      letter-spacing:.3px;
+      text-align:right;
+      white-space:nowrap;
+    }
+    .unit{ font-size: 12px; font-weight: 900; opacity:.75; margin-left: 6px; }
+
+    .status{
+      margin-top: 10px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .status-left{ display:grid; gap: 6px; }
+    .status-title{ font-weight: 950; letter-spacing:.2px; }
+    .status-body{
+      font-size: 13px;
+      color: rgba(255,255,255,.82);
+      line-height:1.35;
+      white-space:pre-line;
+    }
+    .badge{
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 950;
+      font-size: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      white-space:nowrap;
+    }
+    .badge.ok{ background: rgba(24,169,87,.16); border-color: rgba(24,169,87,.45); color: #bff1d2; }
+    .badge.bad{ background: rgba(214,69,69,.16); border-color: rgba(214,69,69,.45); color: #ffd0d0; }
+
+    details{
+      margin-top: 10px;
+      border-radius: 14px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.12);
+    }
+    summary{
+      cursor:pointer;
+      padding: 12px 12px;
+      font-weight: 950;
+      list-style:none;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    .chev{
+      width: 10px; height: 10px;
+      border-right: 2px solid rgba(255,255,255,.75);
+      border-bottom: 2px solid rgba(255,255,255,.75);
+      transform: rotate(45deg);
+      transition: transform .15s ease;
+      margin-top: -2px;
+    }
+    details[open] .chev{ transform: rotate(225deg); margin-top: 2px; }
+    .calcbox{
+      padding: 12px 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12.5px;
+      color: rgba(255,255,255,.86);
+      line-height:1.45;
+      white-space:pre-wrap;
+    }
+
+    .note{
+      margin-top: 10px;
+      color: rgba(255,255,255,.78);
+      font-size: 12px;
+      line-height:1.35;
+    }
+
+    .microhint{
+      margin-top: 6px;
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+      line-height:1.25;
+    }
+    .microhint.bad{
+      color: #ffd0d0;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar" aria-hidden="true"></header>
+
+  <main class="wrap">
+    <div class="modebar" role="tablist" aria-label="Modusvalg">
+      <div class="chip" role="tab" id="tabA" aria-selected="true" tabindex="0" data-mode="A">
+        <span class="chip-dot" aria-hidden="true"></span>
+        A) Jeg vet hengervekt → hva må traktoren ha?
+      </div>
+      <div class="chip" role="tab" id="tabB" aria-selected="false" tabindex="-1" data-mode="B">
+        <span class="chip-dot" aria-hidden="true"></span>
+        B) Jeg vet traktoren → hva kan jeg trekke?
+      </div>
+    </div>
+
+    <section class="grid">
+      <!-- INPUT -->
+      <div class="card">
+        <div class="card-inner">
+          <h2>Inndata</h2>
+          <p class="hint" id="modeHint">Legg inn total hengervekt og vektoverføring.</p>
+
+          <!-- MODE A -->
+          <div id="modeA">
+            <div class="fields">
+              <div class="field">
+                <div class="labelrow">
+                  <label for="aTrailerTotal">Total hengervekt (kg)</label>
+                  <div class="sub">Henger (egenvekt + last)</div>
+                </div>
+                <input id="aTrailerTotal" inputmode="numeric" placeholder="f.eks. 19000">
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <div class="labelrow">
+                    <label for="aTransfer">Vektoverføring til traktor (kg)</label>
+                    <div class="sub">Standard</div>
+                  </div>
+                  <input id="aTransfer" inputmode="numeric" placeholder="f.eks. 3000" value="3000">
+                </div>
+
+                <div class="field">
+                  <div class="labelrow">
+                    <label for="aRuleHpPerTon">HK-regel (hk per tonn)</label>
+                    <div class="sub">Standard: 7</div>
+                  </div>
+                  <input id="aRuleHpPerTon" inputmode="numeric" value="7">
+                </div>
+              </div>
+
+              <div class="btnrow">
+                <button class="btn" id="aCalcBtn" type="button">Beregn</button>
+                <button class="btn secondary" id="aResetBtn" type="button">Nullstill</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODE B -->
+          <div id="modeB" style="display:none">
+            <div class="fields">
+              <div class="row2">
+                <div class="field">
+                  <div class="labelrow">
+                    <label for="bTractorOwn">Traktor egenvekt (kg)</label>
+                    <div class="sub">Uten vektoverføring</div>
+                  </div>
+                  <input id="bTractorOwn" inputmode="numeric" placeholder="f.eks. 8000">
+                </div>
+                <div class="field">
+                  <div class="labelrow">
+                    <label for="bTransfer">Vektoverføring til traktor (kg)</label>
+                    <div class="sub">Standard</div>
+                  </div>
+                  <input id="bTransfer" inputmode="numeric" placeholder="f.eks. 3000" value="3000">
+                </div>
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <div class="labelrow">
+                    <label for="bHp">Motoreffekt (hk)</label>
+                    <div class="sub">Oppgi traktorens hk</div>
+                  </div>
+                  <input id="bHp" inputmode="numeric" placeholder="f.eks. 180">
+                </div>
+                <div class="field">
+                  <div class="labelrow">
+                    <label for="bRuleHpPerTon2">HK-regel (hk per tonn)</label>
+                    <div class="sub">Standard: 7</div>
+                  </div>
+                  <input id="bRuleHpPerTon2" inputmode="numeric" value="7">
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="labelrow">
+                  <label>Henger (fyll inn 2 av 3)</label>
+                  <div class="sub">Regner ut resten</div>
+                </div>
+                <div class="row2">
+                  <div class="field">
+                    <div class="labelrow">
+                      <label for="bTrailerEmpty">Henger egenvekt (kg)</label>
+                      <div class="sub">Fast vekt</div>
+                    </div>
+                    <input id="bTrailerEmpty" inputmode="numeric" placeholder="f.eks. 4000">
+                  </div>
+                  <div class="field">
+                    <div class="labelrow">
+                      <label for="bPayload">Nyttelast (kg)</label>
+                      <div class="sub">Last du vil ha med</div>
+                    </div>
+                    <input id="bPayload" inputmode="numeric" placeholder="f.eks. 15000">
+                  </div>
+                </div>
+                <div class="field" style="margin-top:8px;">
+                  <div class="labelrow">
+                    <label for="bTrailerTotal">Total hengervekt (kg)</label>
+                    <div class="sub">Egenvekt + nyttelast</div>
+                  </div>
+                  <input id="bTrailerTotal" inputmode="numeric" placeholder="f.eks. 19000">
+                  <div class="microhint" id="trailerHint">
+                    Tips: Fyll inn 2 av 3 felter, så regner vi ut det siste.
+                  </div>
+                </div>
+              </div>
+
+              <div class="btnrow">
+                <button class="btn" id="bCalcBtn" type="button">Beregn</button>
+                <button class="btn secondary" id="bResetBtn" type="button">Nullstill</button>
+              </div>
+            </div>
+          </div>
+
+          <p class="note">
+            Tallene er avrundet <strong>opp</strong> til nærmeste 100 kg. Resultatet er veiledende.
+          </p>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="card">
+        <div class="card-inner">
+          <h2>Resultat</h2>
+          <p class="hint" id="resultHint">Hovedsvar først. Detaljer ligger under.</p>
+
+          <div class="results" id="resultPills"></div>
+
+          <div class="status" id="limitBox" style="display:none">
+            <div class="status-left">
+              <div class="status-title" id="limitTitle">Begrensende faktor</div>
+              <div class="status-body" id="limitBody"></div>
+            </div>
+            <div class="badge ok" id="limitBadge">OK</div>
+          </div>
+
+          <details id="detailsB" style="display:none">
+            <summary>
+              Vis detaljer (nå-verdier)
+              <span class="chev" aria-hidden="true"></span>
+            </summary>
+            <div class="calcbox" id="detailsBText"></div>
+          </details>
+
+          <details id="detailsBox" style="display:none">
+            <summary>
+              Vis beregning
+              <span class="chev" aria-hidden="true"></span>
+            </summary>
+            <div class="calcbox" id="calcText"></div>
+          </details>
+
+          <p class="note" id="footerNote" style="margin-top:10px;"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = (sel) => document.querySelector(sel);
+
+    function rawTrim(v){
+      return String(v ?? '').trim().replace(/\s+/g,'');
+    }
+
+    // IMPORTANT: empty string => NaN (fixes the bug)
+    function toNumber(v){
+      const s0 = rawTrim(v);
+      if (s0 === '') return NaN;
+      const s = s0.replace(',', '.');
+      const n = Number(s);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function hasUserValue(el){
+      return rawTrim(el.value) !== '';
+    }
+
+    function ceil100(x){
+      if (!Number.isFinite(x)) return NaN;
+      return Math.ceil(x / 100) * 100;
+    }
+
+    function ceil1(x){
+      if (!Number.isFinite(x)) return NaN;
+      return Math.ceil(x);
+    }
+
+    function fmtInt(n){
+      if (!Number.isFinite(n)) return '–';
+      return Math.round(n).toLocaleString('no-NO');
+    }
+
+    function pillRow(label, value, unit){
+      return `
+        <div class="pill">
+          <div class="k">${label}</div>
+          <div class="v">${value}<span class="unit">${unit || ''}</span></div>
+        </div>
+      `;
+    }
+
+    function setStatus({state, title, body}){
+      const box = $('#limitBox');
+      const badge = $('#limitBadge');
+      const t = $('#limitTitle');
+      const b = $('#limitBody');
+
+      box.style.display = 'flex';
+      t.textContent = title || 'Begrensende faktor';
+      b.textContent = body || '';
+
+      badge.classList.remove('ok','bad');
+      if (state === 'ok'){
+        badge.classList.add('ok'); badge.textContent = 'OK';
+      } else {
+        badge.classList.add('bad'); badge.textContent = 'Mangler';
+      }
+    }
+    function hideStatus(){ $('#limitBox').style.display = 'none'; }
+
+    function showCalc(text){
+      $('#detailsBox').style.display = 'block';
+      $('#calcText').textContent = text || '';
+      $('#detailsBox').open = false;
+    }
+    function hideCalc(){
+      $('#detailsBox').style.display = 'none';
+      $('#calcText').textContent = '';
+    }
+
+    function showBDetails(text){
+      $('#detailsB').style.display = 'block';
+      $('#detailsBText').textContent = text || '';
+      $('#detailsB').open = false;
+    }
+    function hideBDetails(){
+      $('#detailsB').style.display = 'none';
+      $('#detailsBText').textContent = '';
+    }
+
+    // ---------- Core rules ----------
+    function calcModeA({trailerTotal, transfer, hpPerTon}){
+      trailerTotal = Math.max(0, trailerTotal);
+      transfer = Math.max(0, transfer);
+      hpPerTon = hpPerTon > 0 ? hpPerTon : 7;
+
+      const axleLoad = Math.max(0, trailerTotal - transfer);
+      const minTractorIncl = axleLoad / 1.5;
+
+      const vogntog = minTractorIncl + trailerTotal - transfer;
+      const hkNeed = (vogntog / 1000) * hpPerTon;
+
+      return {
+        trailerTotalKg: ceil100(trailerTotal),
+        transferKg: ceil100(transfer),
+        axleLoadKg: ceil100(axleLoad),
+        minTractorInclKg: ceil100(minTractorIncl),
+        vogntogKg: ceil100(vogntog),
+        hkNeed: ceil1(hkNeed),
+        hpPerTon
+      };
+    }
+
+    function calcModeB({tractorOwn, transfer, hk, hpPerTon, trailerEmpty, payload, trailerTotal}){
+      tractorOwn = Math.max(0, tractorOwn);
+      transfer = Math.max(0, transfer);
+      hk = Math.max(0, hk);
+      hpPerTon = hpPerTon > 0 ? hpPerTon : 7;
+
+      trailerEmpty = Math.max(0, trailerEmpty);
+      payload = Math.max(0, payload);
+      trailerTotal = Math.max(0, trailerTotal);
+
+      const tractorIncl = tractorOwn + transfer;
+      const axleLoad = Math.max(0, trailerTotal - transfer);
+      const vogntog = tractorIncl + trailerTotal - transfer;
+
+      const maxTrailerBy15 = (1.5 * tractorIncl) + transfer;
+      const maxVogntogByHK = (hk / hpPerTon) * 1000;
+      const maxTrailerByHK = maxVogntogByHK - tractorIncl + transfer;
+
+      const maxTrailerTotal = Math.max(0, Math.min(maxTrailerBy15, maxTrailerByHK));
+      const maxPayload = Math.max(0, maxTrailerTotal - trailerEmpty);
+
+      const ok15 = axleLoad <= 1.5 * tractorIncl;
+      const okHK = vogntog <= maxVogntogByHK;
+      const limiting = (maxTrailerBy15 <= maxTrailerByHK) ? '1,5-regel (aksellast)' : 'HK-veiledning (vogntog)';
+
+      // OPTION deltas
+      const deltaReduceTrailer = Math.max(0, trailerTotal - maxTrailerTotal);
+
+      const requiredTractorInclFor15 = axleLoad / 1.5;
+      const neededIncreaseTractorIncl = Math.max(0, requiredTractorInclFor15 - tractorIncl);
+
+      const hkMarginVogntog = maxVogntogByHK - vogntog;
+      const tractorIncreaseIsFeasible = hkMarginVogntog >= neededIncreaseTractorIncl;
+
+      const requiredHkForCurrent = (vogntog / 1000) * hpPerTon;
+      const neededIncreaseHk = Math.max(0, requiredHkForCurrent - hk);
+
+      return {
+        hpPerTon,
+
+        tractorInclKg: ceil100(tractorIncl),
+        trailerTotalKg: ceil100(trailerTotal),
+        axleLoadKg: ceil100(axleLoad),
+        vogntogKg: ceil100(vogntog),
+
+        maxTrailerTotalKg: ceil100(maxTrailerTotal),
+        maxPayloadKg: ceil100(maxPayload),
+
+        limiting, ok15, okHK,
+
+        maxTrailerBy15Kg: ceil100(maxTrailerBy15),
+        maxTrailerByHKKg: ceil100(maxTrailerByHK),
+
+        trailerEmptyKg: ceil100(trailerEmpty),
+
+        deltaReduceTrailerKg: ceil100(deltaReduceTrailer),
+        neededIncreaseTractorInclKg: ceil100(neededIncreaseTractorIncl),
+        tractorIncreaseIsFeasible,
+
+        neededIncreaseHk: ceil1(neededIncreaseHk),
+        hkNow: ceil1(hk),
+
+        // to decide wording for option 1
+        hasTrailerEmpty: Number.isFinite(trailerEmpty) && trailerEmpty > 0
+      };
+    }
+
+    // ---------- Mode B: 2-of-3 sync ----------
+    let lastTrailerEdited = 'bPayload';
+    let isSyncing = false;
+
+    function setIfChanged(el, newVal){
+      const s = String(newVal);
+      if (el.value !== s) el.value = s;
+    }
+
+    function clamp0Int(x){
+      return Math.max(0, Math.round(x));
+    }
+
+    function setTrailerHint(kind, msg){
+      const el = $('#trailerHint');
+      el.classList.toggle('bad', kind === 'bad');
+      el.textContent = msg;
+    }
+
+    function syncTrailerFields(){
+      if (isSyncing) return;
+      isSyncing = true;
+
+      const emptyEl = $('#bTrailerEmpty');
+      const payloadEl = $('#bPayload');
+      const totalEl = $('#bTrailerTotal');
+
+      const emptyFilled = hasUserValue(emptyEl);
+      const payloadFilled = hasUserValue(payloadEl);
+      const totalFilled = hasUserValue(totalEl);
+
+      // Update hint (validation) — default
+      setTrailerHint('ok', 'Tips: Fyll inn 2 av 3 felter, så regner vi ut det siste.');
+
+      // No auto-fill until at least 2 fields are filled (FIX)
+      const filledCount = (emptyFilled?1:0) + (payloadFilled?1:0) + (totalFilled?1:0);
+      if (filledCount < 2){
+        // Also: if they typed something invalid (non-number), we keep quiet for now.
+        isSyncing = false;
+        return;
+      }
+
+      const empty = toNumber(emptyEl.value);
+      const payload = toNumber(payloadEl.value);
+      const total = toNumber(totalEl.value);
+
+      const hasEmptyNum = Number.isFinite(empty);
+      const hasPayloadNum = Number.isFinite(payload);
+      const hasTotalNum = Number.isFinite(total);
+
+      // If user filled 2 fields but one is not a valid number, don't auto-fill.
+      if ((emptyFilled && !hasEmptyNum) || (payloadFilled && !hasPayloadNum) || (totalFilled && !hasTotalNum)){
+        isSyncing = false;
+        return;
+      }
+
+      // Validation: if empty > total (when both exist)
+      if (emptyFilled && totalFilled && hasEmptyNum && hasTotalNum && empty > total){
+        setTrailerHint('bad', 'Egenvekt kan ikke være høyere enn total hengervekt.');
+        // We still won’t overwrite anything. Let user fix.
+        isSyncing = false;
+        return;
+      }
+
+      // Compute missing field based on which one is missing (preferred)
+      if (!totalFilled && emptyFilled && payloadFilled){
+        setIfChanged(totalEl, clamp0Int(empty + payload));
+      } else if (!payloadFilled && emptyFilled && totalFilled){
+        setIfChanged(payloadEl, clamp0Int(total - empty));
+      } else if (!emptyFilled && payloadFilled && totalFilled){
+        setIfChanged(emptyEl, clamp0Int(total - payload));
+      } else {
+        // All three filled: keep last edited intact, adjust one of the others
+        if (lastTrailerEdited === 'bTrailerTotal'){
+          if (emptyFilled){
+            setIfChanged(payloadEl, clamp0Int(total - empty));
+          } else if (payloadFilled){
+            setIfChanged(emptyEl, clamp0Int(total - payload));
+          }
+        } else if (lastTrailerEdited === 'bPayload'){
+          if (emptyFilled){
+            setIfChanged(totalEl, clamp0Int(empty + payload));
+          } else if (totalFilled){
+            setIfChanged(emptyEl, clamp0Int(total - payload));
+          }
+        } else { // bTrailerEmpty
+          if (payloadFilled){
+            setIfChanged(totalEl, clamp0Int(empty + payload));
+          } else if (totalFilled){
+            setIfChanged(payloadEl, clamp0Int(total - empty));
+          }
+        }
+      }
+
+      isSyncing = false;
+    }
+
+    // ---------- UI render ----------
+    function setMode(mode){
+      const isA = mode === 'A';
+      $('#modeA').style.display = isA ? 'block' : 'none';
+      $('#modeB').style.display = isA ? 'none' : 'block';
+
+      $('#tabA').setAttribute('aria-selected', String(isA));
+      $('#tabB').setAttribute('aria-selected', String(!isA));
+      $('#tabA').tabIndex = isA ? 0 : -1;
+      $('#tabB').tabIndex = isA ? -1 : 0;
+
+      $('#modeHint').textContent = isA
+        ? 'Legg inn total hengervekt og vektoverføring.'
+        : 'Legg inn traktor og henger. Du får maks og hva som begrenser.';
+
+      $('#resultPills').innerHTML = '';
+      $('#footerNote').textContent = '';
+      hideStatus();
+      hideCalc();
+      hideBDetails();
+    }
+
+    function renderModeA(){
+      const trailerTotal = toNumber($('#aTrailerTotal').value);
+      const transfer = toNumber($('#aTransfer').value);
+      const hpPerTon = toNumber($('#aRuleHpPerTon').value);
+
+      if (!Number.isFinite(trailerTotal) || trailerTotal <= 0 || !Number.isFinite(transfer) || !Number.isFinite(hpPerTon)){
+        $('#resultPills').innerHTML = pillRow('Fyll inn total hengervekt', '–', '');
+        hideStatus(); hideCalc(); hideBDetails();
+        return;
+      }
+
+      const out = calcModeA({trailerTotal, transfer, hpPerTon});
+
+      $('#resultPills').innerHTML = [
+        pillRow('Minimum traktorvekt (inkl. vektoverføring)', fmtInt(out.minTractorInclKg), 'kg'),
+        pillRow('Effektbehov', fmtInt(out.hkNeed), 'hk'),
+        pillRow('Vogntogvekt (beregnet)', fmtInt(out.vogntogKg), 'kg'),
+      ].join('');
+
+      hideStatus();
+      hideBDetails();
+
+      const calcText =
+`GITT:
+- Total hengervekt = ${fmtInt(out.trailerTotalKg)} kg
+- Vektoverføring = ${fmtInt(out.transferKg)} kg
+- HK-regel = ${hpPerTon} hk per tonn
+
+1) Aksellast:
+   aksellast = total henger − vektoverføring
+           = ${fmtInt(out.trailerTotalKg)} − ${fmtInt(out.transferKg)}
+           = ${fmtInt(out.axleLoadKg)} kg
+
+2) Minimum traktorvekt (1,5-regel):
+   min traktor = aksellast / 1,5
+              ≈ ${fmtInt(out.minTractorInclKg)} kg
+
+3) Vogntog (uten dobbeltelling):
+   vogntog = traktor + henger − overføring
+           = ${fmtInt(out.vogntogKg)} kg
+
+4) Effektbehov:
+   hk = (vogntog / 1000) × ${hpPerTon}
+      ≈ ${fmtInt(out.hkNeed)} hk`;
+
+      showCalc(calcText);
+      $('#footerNote').textContent = 'Tallene er avrundet opp til nærmeste 100 kg. Resultatet er veiledende.';
+    }
+
+    function renderModeB(){
+      syncTrailerFields();
+
+      const tractorOwn = toNumber($('#bTractorOwn').value);
+      const transfer = toNumber($('#bTransfer').value);
+      const hk = toNumber($('#bHp').value);
+      const hpPerTon = toNumber($('#bRuleHpPerTon2').value);
+
+      // trailer: require total + empty (so we can compute max payload meaningfully)
+      const trailerTotal = toNumber($('#bTrailerTotal').value);
+      const trailerEmpty = toNumber($('#bTrailerEmpty').value);
+
+      const basicOk = [tractorOwn, transfer, hk, hpPerTon].every(Number.isFinite) && tractorOwn > 0 && hk > 0;
+      const trailerOk = Number.isFinite(trailerTotal) && trailerTotal > 0 && Number.isFinite(trailerEmpty) && trailerEmpty >= 0;
+
+      if (!basicOk || !trailerOk){
+        $('#resultPills').innerHTML = pillRow('Fyll inn traktor (vekt + hk) og henger (2 av 3)', '–', '');
+        hideStatus(); hideCalc(); hideBDetails();
+        return;
+      }
+
+      // payload may be missing/empty -> treat as 0 for calc (it only affects "now" display, not max)
+      const payload = Number.isFinite(toNumber($('#bPayload').value)) ? toNumber($('#bPayload').value) : 0;
+
+      const out = calcModeB({
+        tractorOwn, transfer, hk, hpPerTon,
+        trailerEmpty, payload, trailerTotal
+      });
+
+      // Main results
+      $('#resultPills').innerHTML = [
+        pillRow('Maks total hengervekt (beregnet)', fmtInt(out.maxTrailerTotalKg), 'kg'),
+        pillRow('Maks nyttelast (beregnet)', fmtInt(out.maxPayloadKg), 'kg'),
+        pillRow('Motoreffekt (oppgitt)', fmtInt(out.hkNow), 'hk'),
+      ].join('');
+
+      const ok = out.ok15 && out.okHK;
+
+      if (ok){
+        setStatus({
+          state:'ok',
+          title:`Begrensende faktor: ${out.limiting}`,
+          body:'Innenfor både 1,5-regelen og HK-veiledning.'
+        });
+      } else {
+        // “Velg ett” – ONLY show options that can help alone
+        const lines = [];
+
+        // Option 1: reduce weight — always valid, and we choose wording based on whether empty weight is known
+        if (out.deltaReduceTrailerKg > 0){
+          const reduceLabel = out.hasTrailerEmpty ? 'Reduser nyttelast' : 'Reduser hengervekt';
+          lines.push(`• ${reduceLabel} med ${fmtInt(out.deltaReduceTrailerKg)} kg`);
+        }
+
+        // Option 2: increase tractor weight (only if it solves 1.5 and won't break HK by itself)
+        if (!out.ok15 && out.neededIncreaseTractorInclKg > 0 && out.tractorIncreaseIsFeasible){
+          lines.push(`• Eller øk traktorvekt (inkl. overføring) med ${fmtInt(out.neededIncreaseTractorInclKg)} kg`);
+        }
+
+        // Option 3: increase hp (only if HK is the only failing constraint)
+        // (HK does NOT help 1.5, so we do not show it if 1.5 fails)
+        // We intentionally keep it strict to avoid misleading advice.
+        if (!out.okHK && out.neededIncreaseHk > 0 && out.ok15){
+          lines.push(`• Eller øk motoreffekt med ${fmtInt(out.neededIncreaseHk)} hk`);
+        }
+
+        let body = `Tiltak (velg ett):\n${lines.join('\n')}`;
+        if (lines.length === 1 && (!out.ok15 && !out.okHK)){
+          body += `\n\nMerk: Når begge regler slår inn, er vektreduksjon det enkleste enkelttiltaket.`;
+        }
+
+        setStatus({
+          state:'bad',
+          title:`Begrensende faktor: ${out.limiting}`,
+          body
+        });
+      }
+
+      // Details
+      const detailsText =
+`Nå-verdier (avrundet opp):
+- Traktorvekt inkl. overføring: ${fmtInt(out.tractorInclKg)} kg
+- Total hengervekt (nå):        ${fmtInt(out.trailerTotalKg)} kg
+- Aksellast på henger (nå):     ${fmtInt(out.axleLoadKg)} kg
+- Vogntogvekt (nå):             ${fmtInt(out.vogntogKg)} kg`;
+      showBDetails(detailsText);
+
+      const calcText =
+`Strengeste maks total hengervekt:
+= MIN(1,5-regel, HK-veiledning)
+= ${fmtInt(out.maxTrailerTotalKg)} kg`;
+      showCalc(calcText);
+
+      $('#footerNote').textContent = 'Tallene er avrundet opp til nærmeste 100 kg. Resultatet er veiledende.';
+    }
+
+    // ---------- Events ----------
+    function wireModeTabs(){
+      document.querySelectorAll('.chip[data-mode]').forEach(chip=>{
+        chip.addEventListener('click', ()=> setMode(chip.dataset.mode));
+        chip.addEventListener('keydown', (e)=>{
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setMode(chip.dataset.mode);
+          }
+        });
+      });
+    }
+
+    function wireButtons(){
+      $('#aCalcBtn').addEventListener('click', renderModeA);
+      $('#bCalcBtn').addEventListener('click', renderModeB);
+
+      $('#aResetBtn').addEventListener('click', ()=>{
+        $('#aTrailerTotal').value = '';
+        $('#aTransfer').value = '3000';
+        $('#aRuleHpPerTon').value = '7';
+        $('#resultPills').innerHTML = '';
+        $('#footerNote').textContent = '';
+        hideStatus(); hideCalc(); hideBDetails();
+      });
+
+      $('#bResetBtn').addEventListener('click', ()=>{
+        $('#bTractorOwn').value = '';
+        $('#bHp').value = '';
+        $('#bTrailerEmpty').value = '';
+        $('#bPayload').value = '';
+        $('#bTrailerTotal').value = '';
+        $('#bTransfer').value = '3000';
+        $('#bRuleHpPerTon2').value = '7';
+        $('#resultPills').innerHTML = '';
+        $('#footerNote').textContent = '';
+        setTrailerHint('ok', 'Tips: Fyll inn 2 av 3 felter, så regner vi ut det siste.');
+        hideStatus(); hideCalc(); hideBDetails();
+      });
+
+      // Debounce
+      let t;
+      function debounce(fn){
+        clearTimeout(t);
+        t = setTimeout(fn, 140);
+      }
+
+      ['#aTrailerTotal','#aTransfer','#aRuleHpPerTon'].forEach(id=>{
+        $(id).addEventListener('input', ()=> debounce(renderModeA));
+      });
+
+      ['#bTractorOwn','#bTransfer','#bHp','#bRuleHpPerTon2'].forEach(id=>{
+        $(id).addEventListener('input', ()=> debounce(renderModeB));
+      });
+
+      // 2-of-3 logic
+      ['#bTrailerEmpty','#bPayload','#bTrailerTotal'].forEach(id=>{
+        $(id).addEventListener('input', (e)=>{
+          lastTrailerEdited = e.target.id;
+          syncTrailerFields();
+          debounce(renderModeB);
+        });
+      });
+    }
+
+    function initBlank(){
+      $('#resultPills').innerHTML = '';
+      $('#footerNote').textContent = '';
+      hideStatus();
+      hideCalc();
+      hideBDetails();
+      setTrailerHint('ok', 'Tips: Fyll inn 2 av 3 felter, så regner vi ut det siste.');
+    }
+
+    wireModeTabs();
+    wireButtons();
+    initBlank();
+  </script>
+</body>
+</html>
