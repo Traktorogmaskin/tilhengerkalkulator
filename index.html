@@ -1,1252 +1,1807 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tilhengerkalkulator – Traktor</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tilhengerkalkulator</title>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
-    :root{
-      --bg:#f4f6f8;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --line:#e5e7eb;
+    :root {
+      --bg: #f3f1ee;
+      --card: #ffffff;
+      --text: #2f3b4a;
+      --heading: #2b2f33;
+      --muted: #6a7787;
+      --line: #d8dde3;
 
-      --brand:#f97316;         /* orange */
-      --brand-2:#fb923c;
+      --brand-dark: #2b2f33;
+      --brand-dark-2: #444444;
+      --brand-orange: #e67e22;
+      --brand-orange-hover: #f08b34;
+      --brand-info: #d8e9ef;
 
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --bad:#dc2626;
+      --ok-text: #168b46;
+      --ok-bg: #ecfdf3;
+      --ok-border: #86efac;
 
-      --ok-bg:#eaf7ee;
-      --warn-bg:#fff6e8;
-      --bad-bg:#ffecec;
+      --warn-text: #b45309;
+      --warn-bg: #fff7ed;
+      --warn-border: #f4c58e;
 
-      --shadow: 0 10px 25px rgba(15, 23, 42, .08);
-      --radius: 16px;
+      --error-text: #dc2626;
+      --error-bg: #fff4f4;
+      --error-border: #f2aaaa;
 
-      --glow-blue: 0 0 0 3px rgba(59,130,246,.22);
-      --glow-green: 0 0 0 3px rgba(34,197,94,.22);
-      --glow-red: 0 0 0 3px rgba(239,68,68,.22);
-    }
-
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text);
-      background:var(--bg);
-    }
-
-    /* Topbar */
-    .topbar{
-      position:sticky; top:0; z-index:20;
-      background:#26313a;
-      color:#fff;
-      padding:10px 18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      box-shadow:0 8px 18px rgba(0,0,0,.12);
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      font-weight:800;
-      letter-spacing:.2px;
-      white-space:nowrap;
-    }
-    .dot{ width:10px; height:10px; border-radius:999px; background:var(--brand); display:inline-block; }
-    .subtitle{
-      font-weight:600; opacity:.9; font-size:13px;
-      white-space:nowrap;
-    }
-    .top-actions{
-      display:flex; align-items:center; gap:10px;
-      white-space:nowrap;
-    }
-    .pill{
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-      color:#fff;
-      padding:7px 10px;
-      border-radius:999px;
-      font-size:12px;
-      display:flex; align-items:center; gap:8px;
-    }
-    .toggle{
-      display:flex; align-items:center; gap:8px;
-      cursor:pointer;
-      user-select:none;
-    }
-    .toggle input{ width:16px; height:16px; accent-color: #22c55e; }
-
-    /* Layout */
-    .wrap{
-      max-width: 1500px;
-      margin: 18px auto;
-      padding: 0 18px 28px;
+      --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --container: 1210px;
+      --font:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns: 0.95fr 1.05fr; /* resultat litt større */
-      gap:16px;
-      align-items:start;
-    }
-    @media (max-width: 1080px){
-      .grid{ grid-template-columns: 1fr; }
-      .topbar{ flex-wrap:wrap; }
-      .subtitle{ white-space:normal; }
+    * { box-sizing: border-box; min-width: 0; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
     }
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
+    body { line-height: 1.32; }
+    .page {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 10px 14px 16px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0 0 2px;
+      color: var(--heading);
+      font-size: clamp(28px, 3vw, 38px);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      max-width: 720px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 0.95fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .stack { display: grid; gap: 10px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
       box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .card-h{
-      padding:14px 16px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .card-h h2{
-      margin:0; font-size:16px; letter-spacing:.2px;
-    }
-    .card-b{
-      padding:16px;
-    }
-    .muted{ color:var(--muted); font-size:13px; line-height:1.35; }
-
-    /* Buttons */
-    .btn{
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:12px;
-      font-weight:700;
-      cursor:pointer;
-      transition:.15s ease;
-      white-space:nowrap;
-    }
-    .btn:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(15,23,42,.10); }
-    .btn:active{ transform: translateY(0); box-shadow:none; }
-    .btn.primary{
-      background:var(--brand);
-      border-color:var(--brand);
-      color:#fff;
-    }
-    .btn.primary:hover{ background:var(--brand-2); border-color:var(--brand-2); }
-    .btn.ghost{
-      background:#fff;
-      border-style:dashed;
-    }
-    .btn.small{ padding:8px 10px; border-radius:10px; font-size:13px; font-weight:700; }
-    .btn.block{ width:100%; justify-content:center; display:flex; }
-
-    /* Secondary button (toned, clickable, not screaming) */
-    .btn.secondary{
-      background:#f1f5f9;
-      border-color:#d8e0ea;
-      color:#0f172a;
-    }
-    .btn.secondary:hover{
-      background:#e8eef6;
-      border-color:#cbd5e1;
+      padding: 10px;
     }
 
-    /* Form layout */
-    .row{
-      display:grid;
-      grid-template-columns: 1fr 210px; /* felt + checkbox-boks */
-      gap:12px;
-      align-items:start;
-      margin-bottom:14px;
-    }
-    @media (max-width: 520px){
-      .row{ grid-template-columns: 1fr; }
+    .dark-card {
+      background: var(--brand-dark);
+      color: #fff;
+      border-color: rgba(255,255,255,.06);
     }
 
-    .field label{
-      display:flex; align-items:baseline; justify-content:space-between;
-      gap:10px;
-      font-weight:800;
-      font-size:13px;
-      margin-bottom:6px;
-    }
-    .field .hint{ font-weight:700; font-size:12px; color:var(--muted); }
-    .field input{
-      width:100%;
-      padding:12px 12px;
-      border:1px solid #cfd7e3;
-      border-radius:12px;
-      font-size:16px;
-      font-weight:800;
-      outline:none;
-      transition:.15s ease;
-      background:#fff;
-    }
-    .field input:focus{ box-shadow: var(--glow-blue); border-color:#6aa8ff; }
-
-    /* Keep boxes: tie to "Gjør lovlig" (same family) */
-    .keepBox{
-      border:1px solid rgba(249,115,22,.35);
-      background:#fff7ed;
-      border-radius:12px;
-      padding:10px 10px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      min-height:54px;
-      margin-top:22px; /* align with input */
-    }
-    .keepBox strong{ font-size:13px; line-height:1.1; }
-    .keepBox .sub{ font-size:12px; color:var(--muted); font-weight:700; }
-    .keepBox input{ width:18px; height:18px; accent-color: var(--brand); }
-
-    .actions{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-      margin-top:10px;
-      align-items:center;
-    }
-    @media (max-width: 700px){
-      .actions{ grid-template-columns: 1fr; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+      margin-bottom: 8px;
     }
 
-    .footnote{
-      margin-top:12px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.35;
+    .dark-card .section-head {
+      border-bottom-color: rgba(255,255,255,.1);
     }
-    .footnote b{ color:#334155; }
 
-    /* Result status */
-    .status{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px 14px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:12px;
+    .section-head h2,
+    .section-head h3 {
+      margin: 0;
+      color: var(--heading);
+      font-size: 15px;
+      letter-spacing: -0.02em;
     }
-    .status .title{ font-weight:900; }
-    .badge{
-      border-radius:999px;
-      padding:6px 10px;
-      font-weight:900;
-      font-size:12px;
-      white-space:nowrap;
-      border:1px solid;
+
+    .dark-card .section-head h2,
+    .dark-card .section-head h3 {
+      color: #fff;
     }
-    .ok{ background:var(--ok-bg); border-color:#9ee6b8; }
-    .warn{ background:var(--warn-bg); border-color:#ffd59a; }
-    .bad{ background:var(--bad-bg); border-color:#ffb4b4; }
 
-    .badge.ok{ color:var(--ok); }
-    .badge.warn{ color: #b45309; }
-    .badge.bad{ color: var(--bad); }
+    .section-meta {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
 
-    /* Min/max quick cards */
-    .minmax{
-      display:grid;
+    .dark-card .section-meta { color: rgba(255,255,255,.72); }
+
+    /* INPUT */
+    .input-card {
+      background: var(--brand-dark);
+      border-color: #3b4045;
+      color: #fff;
+    }
+
+    .input-card .section-head {
+      border-bottom-color: rgba(255,255,255,.12);
+    }
+
+    .input-card .section-head h2,
+    .input-card .section-meta {
+      color: #fff;
+    }
+
+    .input-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 116px minmax(110px, 1fr) 215px;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .field-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.18;
+      margin-top: 8px;
+    }
+
+    .input-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-shell {
+      position: relative;
+    }
+
+    .input-shell input {
+      width: 100%;
+      height: 40px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,.96);
+      color: var(--heading);
+      padding: 0 48px 0 12px;
+      font-size: 15px;
+      font-weight: 900;
+      outline: none;
+      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+
+    .input-shell input:focus {
+      border-color: var(--brand-orange);
+      box-shadow: 0 0 0 4px rgba(230, 126, 34, .16);
+      background: #fff;
+    }
+
+    .input-shell.error input {
+      border-color: var(--error-border);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, .10);
+    }
+
+    .unit {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .field-error {
+      min-height: 14px;
+      color: #ffd0d0;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .field-helper {
+      margin-top: 6px;
+      color: rgba(255,255,255,.78);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .btn {
+      height: 40px;
+      border: 0;
+      border-radius: var(--radius-md);
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform .12s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn-orange {
+      background: var(--brand-orange);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(230, 126, 34, .22);
+    }
+
+    .btn-orange:hover { background: var(--brand-orange-hover); }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--heading);
+      border: 1px solid var(--line);
+    }
+
+    .btn-secondary:hover { background: #fafafa; }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-note {
+      margin-top: 6px;
+      color: rgba(255,255,255,.78);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* SUMMARY */
+    .summary-card {
+      background: var(--brand-dark);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 11px;
+      border: 1px solid #3b4045;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 0;
+      margin-bottom: 10px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      font-size: 13px;
+    }
+
+    .summary-row .k {
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .summary-row .v {
+      font-weight: 900;
+      color: #fff;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .summary-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .summary-actions .btn-secondary {
+      color: #fff;
+      border-color: rgba(255,255,255,.16);
+      background: rgba(255,255,255,.04);
+    }
+
+    .summary-actions .btn-secondary:hover {
+      background: rgba(255,255,255,.10);
+    }
+
+    .summary-toggle {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      color: #fff;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+    }
+
+    .summary-toggle .left strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 1px;
+    }
+
+    .summary-toggle .left span {
+      color: rgba(255,255,255,.72);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .summary-icon {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.04);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+
+    .summary-detail {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .summary-card.open .summary-detail {
+      display: block;
+    }
+
+    .summary-box {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,.03);
+      padding: 10px;
+    }
+
+    .summary-box pre {
+      margin: 0;
+      font-family: var(--font);
+      font-size: 12px;
+      line-height: 1.42;
+      color: #fff;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* RESULT */
+    .result-card { padding: 10px; }
+
+    .result-topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .result-topline .title {
+      color: var(--heading);
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .status-note {
+      margin-bottom: 8px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 8px 10px;
+      background: #fff;
+    }
+
+    .status-note-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .status-note-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--heading);
+      margin-bottom: 2px;
+    }
+
+    .status-note-text {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-note-list {
+      margin-top: 8px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .status-help {
+      border-radius: 10px;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--brand-info);
+      color: #36566a;
+    }
+
+    .status-help.warn {
+      background: #fff4ea;
+      color: #9b4d0b;
+      border: 1px solid #f3d2af;
+    }
+
+    .status-pill {
+      min-width: 74px;
+      max-width: 108px;
+      text-align: center;
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 900;
+      border: 1px solid var(--line);
+      line-height: 1.1;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .status-pill.ok {
+      background: var(--ok-bg);
+      color: var(--ok-text);
+      border-color: var(--ok-border);
+    }
+
+    .status-pill.warn {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border-color: var(--warn-border);
+    }
+
+    .status-pill.muted {
+      background: #f8fafc;
+      color: var(--muted);
+      border-color: var(--line);
+    }
+
+    .results-grid {
+      display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap:10px;
-      margin-bottom:12px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
-    @media (max-width: 820px){
-      .minmax{ grid-template-columns: 1fr; }
-    }
-    .mm{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px 12px;
-      background:#fff;
-    }
-    .mm .k{ font-size:12px; color:var(--muted); font-weight:900; }
-    .mm .v{ font-size:22px; font-weight:950; margin-top:4px; }
-    .mm .s{ font-size:12px; color:var(--muted); font-weight:700; margin-top:2px; }
 
-    /* 3 boxes: tractor / transfer / trailer */
-    .triple{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      margin-bottom:12px;
+    .result-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 8px 10px;
+      background: #fbfbfb;
+      min-height: 72px;
     }
-    .triple-h{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-bottom:10px;
-    }
-    .triple-h .t{ font-weight:950; }
-    .triple-h .r{ color:var(--muted); font-size:12px; font-weight:800; }
 
-    .tri{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
+    .result-box .k {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
     }
-    @media (max-width: 820px){
-      .tri{ grid-template-columns: 1fr; }
-    }
-    .box{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      min-height:98px;
-    }
-    .box.ok{ border-color:#bdeacc; box-shadow: inset 0 0 0 2px rgba(34,197,94,.12); }
-    .box.warn{ border-color:#ffe0b5; box-shadow: inset 0 0 0 2px rgba(245,158,11,.10); background:#fffaf2; }
-    .box.bad{ border-color:#ffc1c1; box-shadow: inset 0 0 0 2px rgba(239,68,68,.10); background:#fff6f6; }
-    .box h3{ margin:0 0 8px; font-size:13px; letter-spacing:.2px; }
-    .kv{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap:6px 10px;
-      align-items:baseline;
-      font-size:13px;
-      font-weight:800;
-    }
-    .kv .k{ color:var(--muted); font-weight:800; }
-    .kv .v{ font-weight:950; }
-    .box .tiny{ margin-top:8px; color:var(--muted); font-size:12px; font-weight:700; line-height:1.25; }
 
-    /* Rules compact (no long bars) */
-    .rules{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      margin-bottom:12px;
+    .result-box .v {
+      margin-top: 6px;
+      color: var(--heading);
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
     }
-    .rules-h{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-bottom:10px;
+
+    .result-box .s {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
     }
-    .rules-h .t{ font-weight:950; }
-    .rules-h .r{ color:var(--muted); font-size:12px; font-weight:800; }
-    .ruleGrid{
-      display:grid;
+
+    .detail-grid {
+      display: grid;
       grid-template-columns: 1fr 1fr;
-      gap:10px;
+      gap: 10px;
+      align-items: stretch;
     }
-    @media (max-width: 820px){
-      .ruleGrid{ grid-template-columns: 1fr; }
-    }
-    .ruleCard{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    .ruleTop{
-      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
-    }
-    .ruleTop .name{ font-weight:950; font-size:13px; }
-    .stack{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
-    .chip{
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:6px 10px;
-      font-weight:900;
-      font-size:12px;
-      width: fit-content;
-      background:#fff;
-    }
-    .chip.ok{ background:var(--ok-bg); border-color:#9ee6b8; color:var(--ok); }
-    .chip.bad{ background:var(--bad-bg); border-color:#ffb4b4; color:var(--bad); }
-    .chip.info{ background:#f5f7ff; border-color:#c7d2fe; color:#3730a3; }
 
-    /* Summary */
-    .summary{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#fff;
+    .detail-panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
     }
-    .summary .lead{
-      font-weight:950;
-      margin-bottom:8px;
-    }
-    .summary .lines{
-      display:grid;
-      gap:6px;
-      font-size:13px;
-      font-weight:800;
-    }
-    .summary .lines span{ color:var(--muted); font-weight:800; }
 
-    /* Defaults collapsible */
-    details{
-      border-top:1px solid var(--line);
-      margin-top:14px;
-      padding-top:12px;
+    .detail-panel.ok {
+      border-left: 4px solid var(--ok-text);
     }
-    summary{
-      cursor:pointer;
-      font-weight:950;
-      list-style:none;
-      display:flex; align-items:center; justify-content:space-between;
+
+    .detail-panel.warn {
+      border-left: 4px solid var(--error-text);
     }
-    summary::-webkit-details-marker{ display:none; }
-    .defaults{
-      margin-top:12px;
-      display:grid;
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: start;
+      margin-bottom: 4px;
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      color: var(--heading);
+      font-size: 15px;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-sub {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.22;
+    }
+
+    .compact-section {
+      margin-top: 10px;
+      padding-top: 7px;
+      border-top: 1px solid #e9edf4;
+    }
+
+    .compact-title {
+      color: #44556f;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      margin-bottom: 6px;
+      line-height: 1;
+    }
+
+    .compact-rows {
+      display: grid;
+      gap: 5px;
+    }
+
+    .compact-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: baseline;
+      padding: 3px 0;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .compact-row:last-child { border-bottom: 0; }
+
+    .compact-label {
+      color: #51657f;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .compact-value {
+      color: var(--heading);
+      font-size: 12px;
+      font-weight: 900;
+      text-align: right;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .compact-value.negative { color: var(--error-text); }
+    .compact-value.positive { color: var(--ok-text); }
+
+    .inline-help {
+      margin-top: 8px;
+      border-radius: 10px;
+      padding: 7px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      background: var(--brand-info);
+      color: #36566a;
+    }
+
+    .inline-help.warn {
+      background: #fff4ea;
+      color: #9b4d0b;
+      border: 1px solid #f3d2af;
+    }
+
+    .collapse-card { overflow: hidden; }
+
+    .collapse-toggle {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+    }
+
+    .collapse-toggle .left strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 1px;
+    }
+
+    .collapse-toggle .left span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .collapse-icon {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+
+    .collapse-content {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .collapse-card.open .collapse-content {
+      display: block;
+    }
+
+    .accordion-grid {
+      display: grid;
       grid-template-columns: 1fr 1fr;
-      gap:12px;
-    }
-    @media (max-width: 720px){
-      .defaults{ grid-template-columns: 1fr; }
+      gap: 12px;
     }
 
-    /* Glow states for missing/invalid */
-    .need input{ box-shadow: var(--glow-blue); border-color:#6aa8ff; }
-    .badField input{ box-shadow: var(--glow-red); border-color:#ff8b8b; }
-    .okField input{ box-shadow: var(--glow-green); border-color:#77d29a; }
+    .info-card h3 {
+      margin: 0 0 4px;
+      font-size: 15px;
+      color: var(--heading);
+    }
 
-    /* OFFSCREEN PDF iframe (not visible) */
-    #pdfFrame{
-      position:fixed;
-      width:1100px;
-      height:1400px;
-      left:-10000px;
-      top:0;
-      opacity:0;
-      pointer-events:none;
-      border:0;
+    .info-card .sub {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .info-card p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .info-card strong { color: var(--heading); }
+
+    .formula-list { display: grid; gap: 7px; }
+
+    .formula-item {
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfe;
+    }
+
+    .formula-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      margin-bottom: 3px;
+    }
+
+    .formula-code {
+      color: var(--heading);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.28;
+    }
+
+    .note-box {
+      padding: 11px 13px;
+      border: 1px solid #cfe0e6;
+      border-radius: 14px;
+      background: var(--brand-info);
+      color: #36566a;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.42;
+    }
+
+    @media (max-width: 1120px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 920px) {
+      .field-row,
+      .results-grid,
+      .detail-grid,
+      .accordion-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar { flex-direction: column; }
+      .btn { width: 100%; }
     }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-      <div class="brand"><span class="dot"></span> Tilhengerkalkulator – Traktor</div>
-      <div class="subtitle">Oppgitt (vognkort) inn → systemet viser også aktuell/justert etter <b>vektoverføring</b></div>
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <h1>Tilhengerkalkulator</h1>
+        <p class="lead">
+          Veiledende kalkulator basert på 1,5-regel, vektoverføring og HK/tonn.
+          Fyll inn tall i tonn eller bruk hurtigknappene for å foreslå min/maks.
+        </p>
+      </div>
     </div>
-    <div class="top-actions">
-      <label class="pill toggle" title="Når aktiv: beregner automatisk ved input.">
-        <input id="live" type="checkbox" checked />
-        Beregn ved input (live)
-      </label>
+
+    <div class="main-grid">
+      <div class="stack">
+        <section class="card input-card">
+          <div class="section-head">
+            <h2>1) Legg inn tall</h2>
+            <div class="section-meta">Tonn med desimaler</div>
+          </div>
+
+          <div class="input-grid">
+            <div class="field-row">
+              <div class="field-title">Traktor egenvekt</div>
+              <div class="input-wrap">
+                <div id="shellTractor" class="input-shell">
+                  <input id="tractorWeight" type="text" inputmode="decimal" placeholder="F.eks. 5,8" />
+                  <span class="unit">tonn</span>
+                </div>
+                <div id="errorTractor" class="field-error"></div>
+              </div>
+              <button id="btnFillMinTractor" class="btn btn-orange" type="button">Sett minimum traktorvekt</button>
+            </div>
+
+            <div class="field-row">
+              <div class="field-title">Tilhenger totalvekt</div>
+              <div class="input-wrap">
+                <div id="shellTrailer" class="input-shell">
+                  <input id="trailerWeight" type="text" inputmode="decimal" placeholder="F.eks. 16,2" />
+                  <span class="unit">tonn</span>
+                </div>
+                <div id="errorTrailer" class="field-error"></div>
+              </div>
+              <button id="btnFillMaxTrailer" class="btn btn-orange" type="button">Sett max tilhengervekt</button>
+            </div>
+
+            <div class="field-row">
+              <div class="field-title">Effekt (HK)</div>
+              <div class="input-wrap">
+                <div id="shellHp" class="input-shell">
+                  <input id="horsePower" type="text" inputmode="numeric" placeholder="F.eks. 160" />
+                  <span class="unit">HK</span>
+                </div>
+                <div id="errorHp" class="field-error"></div>
+              </div>
+              <button id="btnFillMinHp" class="btn btn-orange" type="button">Sett minimum HK</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <button id="btnReset" class="btn btn-secondary" type="button">Nullstill</button>
+          </div>
+
+          <div class="toolbar-note">
+            Vekter skrives i tonn. Desimaler er tillatt. Kalkulatoren avrunder til nærmeste 0,1 tonn (100 kg) i visning og beregning.
+          </div>
+        </section>
+
+        <section class="summary-card" id="summaryCard">
+          <div class="summary-grid">
+            <div class="summary-row">
+              <div class="k">Maks tilhenger (oppgitt total)</div>
+              <div id="summaryMaxTrailer" class="v">—</div>
+            </div>
+            <div class="summary-row">
+              <div class="k">Min traktor (oppgitt)</div>
+              <div id="summaryMinTractor" class="v">—</div>
+            </div>
+            <div class="summary-row">
+              <div class="k">Min HK</div>
+              <div id="summaryMinHp" class="v">—</div>
+            </div>
+            <div class="summary-row">
+              <div class="k">1,5-regel</div>
+              <div id="summary15" class="v">—</div>
+            </div>
+            <div class="summary-row">
+              <div class="k">HK/tonn</div>
+              <div id="summaryHp" class="v">—</div>
+            </div>
+          </div>
+
+          <div class="summary-actions">
+            <button id="btnCopySummary" class="btn btn-secondary" type="button">Kopier sammendrag</button>
+            <button id="btnPdf" class="btn btn-orange" type="button">Last ned PDF</button>
+          </div>
+
+          <button class="summary-toggle" id="summaryToggle" type="button" aria-expanded="false">
+            <div class="left">
+              <strong>▼ Vis sammendragsdetaljer</strong>
+              <span>Full beregning vises her, og i PDF / kopiert sammendrag.</span>
+            </div>
+            <span class="summary-icon" id="summaryIcon">+</span>
+          </button>
+
+          <div class="summary-detail">
+            <div class="summary-box">
+              <pre id="summaryText">Ingen data ennå.</pre>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card result-card">
+          <div class="result-topline">
+            <div class="title">2) Resultat (veiledende)</div>
+          </div>
+
+          <div class="status-note">
+            <div class="status-note-top">
+              <div>
+                <div id="bannerTitle" class="status-note-title">Klar til beregning</div>
+                <div id="bannerText" class="status-note-text">Legg inn tall for å se resultat og vurdering.</div>
+              </div>
+              <div id="bannerStatus" class="status-pill muted">—</div>
+            </div>
+            <div id="statusHelpList" class="status-note-list"></div>
+          </div>
+
+          <div class="results-grid">
+            <div class="result-box">
+              <div class="k">Maks tilhenger<br>(oppgitt total)</div>
+              <div id="statMaxTrailer" class="v">—</div>
+              <div class="s">Maks tillatt etter 1,5-regelen</div>
+            </div>
+            <div class="result-box">
+              <div class="k">Min traktor<br>(oppgitt)</div>
+              <div id="statMinTractor" class="v">—</div>
+              <div class="s">Minimum for denne tilhengeren</div>
+            </div>
+            <div class="result-box">
+              <div class="k">Min HK<br>(krav)</div>
+              <div id="statMinHp" class="v">—</div>
+              <div class="s">Krav for dette vogntoget</div>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <article id="panel15" class="detail-panel">
+              <div class="panel-head">
+                <div>
+                  <h3>1,5-regel</h3>
+                  <p class="panel-sub">Traktor, tilhenger og status.</p>
+                </div>
+                <div id="status15" class="status-pill muted">Mangler</div>
+              </div>
+
+              <div class="compact-section">
+                <div class="compact-title">TRAKTOR</div>
+                <div class="compact-rows">
+                  <div class="compact-row"><div class="compact-label">Traktor egenvekt</div><div id="v15TractorGiven" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Vektoverføring</div><div id="v15TransferPlus" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Traktor med vektoverføring</div><div id="v15TractorActual" class="compact-value">—</div></div>
+                </div>
+              </div>
+
+              <div class="compact-section">
+                <div class="compact-title">TILHENGER</div>
+                <div class="compact-rows">
+                  <div class="compact-row"><div class="compact-label">Tilhenger totalvekt</div><div id="v15TrailerTotal" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Vektoverføring</div><div id="v15TransferMinus" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Vekt på tilhengeraksler</div><div id="v15Axles" class="compact-value">—</div></div>
+                </div>
+              </div>
+
+              <div class="compact-section">
+                <div class="compact-title">STATUS</div>
+                <div class="compact-rows">
+                  <div class="compact-row"><div class="compact-label">1,5 × traktor med vektoverføring</div><div id="v15Limit" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Vurdering</div><div id="v15CheckShort" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Margin</div><div id="v15Margin" class="compact-value">—</div></div>
+                </div>
+              </div>
+
+              <div id="help15" class="inline-help" style="display:none;"></div>
+            </article>
+
+            <article id="panelHp" class="detail-panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Effekt (HK/tonn)</h3>
+                  <p class="panel-sub">Oppgitt, krav og status.</p>
+                </div>
+                <div id="statusHp" class="status-pill muted">Mangler</div>
+              </div>
+
+              <div class="compact-section">
+                <div class="compact-title">OPPGITT</div>
+                <div class="compact-rows">
+                  <div class="compact-row"><div class="compact-label">Traktor egenvekt</div><div id="vHpTractor" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Tilhenger totalvekt</div><div id="vHpTrailer" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Samlet vogntogvekt</div><div id="vHpConvoy" class="compact-value">—</div></div>
+                </div>
+              </div>
+
+              <div class="compact-section">
+                <div class="compact-title">KRAV</div>
+                <div class="compact-rows">
+                  <div class="compact-row"><div class="compact-label">HK-krav</div><div id="vHpRequired" class="compact-value">—</div></div>
+                </div>
+              </div>
+
+              <div class="compact-section">
+                <div class="compact-title">STATUS</div>
+                <div class="compact-rows">
+                  <div class="compact-row"><div class="compact-label">HK oppgitt</div><div id="vHpGiven" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Vurdering</div><div id="vHpStatus" class="compact-value">—</div></div>
+                  <div class="compact-row"><div class="compact-label">Margin</div><div id="vHpMargin" class="compact-value">—</div></div>
+                </div>
+              </div>
+
+              <div id="helpHp" class="inline-help" style="display:none;"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card collapse-card" id="infoCollapse">
+          <button class="collapse-toggle" id="infoToggle" type="button" aria-expanded="false">
+            <div class="left">
+              <strong>▼ Vis forklaring og formler</strong>
+              <span>Trykk her for å åpne kort forklart og formelblokk.</span>
+            </div>
+            <span id="infoIcon" class="collapse-icon">+</span>
+          </button>
+
+          <div class="collapse-content">
+            <div class="accordion-grid">
+              <section class="info-card">
+                <h3>Hvordan kalkulatoren vurderer vogntoget</h3>
+                <p class="sub">Kort forklart og uten tekniske uttrykk.</p>
+
+                <p><strong>1,5-regelen</strong></p>
+                <p>1,5-regelen beregnes slik:</p>
+                <p><strong>(Traktorens egenvekt + vektoverføring) × 1,5</strong></p>
+                <p>Dette resultatet sammenlignes med vekten som ligger på <strong>tilhengerens aksler</strong>.</p>
+
+                <p><strong>HK-krav</strong></p>
+                <p>Effektkravet beregnes fra <strong>samlet vogntogvekt</strong>.</p>
+                <p><strong>(Traktor + tilhenger) × 7 HK per tonn</strong></p>
+                <p>Dette gir <strong>minimum effekt</strong> traktoren må ha.</p>
+
+                <p><strong>Vektoverføring</strong></p>
+                <p>Når en tilhenger kobles til traktoren, overføres en del av vekten til traktoren via draget.</p>
+                <p>Det betyr at <strong>traktorens vekt øker</strong>, og at <strong>vekten på tilhengerens aksler reduseres tilsvarende</strong>.</p>
+              </section>
+
+              <section class="info-card">
+                <h3>Formelblokk</h3>
+                <p class="sub">Dette er formlene kalkulatoren bruker.</p>
+
+                <div class="formula-list">
+                  <div class="formula-item">
+                    <div class="formula-title">1,5-regelen</div>
+                    <div class="formula-code">(Traktorens egenvekt + vektoverføring) × 1,5</div>
+                  </div>
+
+                  <div class="formula-item">
+                    <div class="formula-title">Traktor med vektoverføring</div>
+                    <div class="formula-code">Traktor egenvekt + vektoverføring</div>
+                  </div>
+
+                  <div class="formula-item">
+                    <div class="formula-title">Vekt på tilhengeraksler</div>
+                    <div class="formula-code">Tilhenger totalvekt − vektoverføring</div>
+                  </div>
+
+                  <div class="formula-item">
+                    <div class="formula-title">Samlet vogntogvekt</div>
+                    <div class="formula-code">Traktor egenvekt + tilhenger totalvekt</div>
+                  </div>
+
+                  <div class="formula-item">
+                    <div class="formula-title">HK-krav</div>
+                    <div class="formula-code">Samlet vogntogvekt × 7 HK per tonn</div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="note-box">
+            Denne kalkulatoren er veiledende etter generelle regler.<br>
+            Kontroller alltid opp mot vognkort, førerkort og andre begrensninger.
+          </div>
+        </section>
+      </div>
     </div>
   </div>
-
-  <div class="wrap">
-    <div class="grid">
-
-      <!-- INPUT -->
-      <section class="card" id="inputCard">
-        <div class="card-h">
-          <h2>Inndata</h2>
-          <button class="btn small" id="btnReset" type="button">Tøm skjema</button>
-        </div>
-
-        <div class="card-b">
-          <div class="muted" style="margin-bottom:12px;">
-            Fyll inn <b>1, 2 eller 3</b> felt. <b>Sjekk</b> tester uten å endre. <b>Gjør lovlig</b> fyller inn/justerer resten (basert på avhuking).
-          </div>
-
-          <!-- Tractor -->
-          <div class="row" id="rowTr">
-            <div class="field">
-              <label>
-                <span>Traktor – oppgitt vekt (kg)</span>
-                <span class="hint">Oppgitt = vognkort/vekt</span>
-              </label>
-              <input id="inTraktor" inputmode="numeric" placeholder="f.eks. 13000" />
-            </div>
-
-            <div class="keepBox" id="keepTrBox">
-              <div>
-                <strong>Behold traktorvekt</strong>
-              </div>
-              <input id="keepTr" type="checkbox" />
-            </div>
-          </div>
-
-          <!-- HK -->
-          <div class="row" id="rowHK">
-            <div class="field">
-              <label>
-                <span>Effekt (HK)</span>
-                <span class="hint">Regel: HK/tonn</span>
-              </label>
-              <input id="inHK" inputmode="numeric" placeholder="f.eks. 280" />
-            </div>
-
-            <div class="keepBox" id="keepHKBox">
-              <div>
-                <strong>Behold HK</strong>
-              </div>
-              <input id="keepHK" type="checkbox" />
-            </div>
-          </div>
-
-          <!-- Trailer -->
-          <div class="row" id="rowHe">
-            <div class="field">
-              <label>
-                <span>Henger – oppgitt totalvekt (kg)</span>
-                <span class="hint">Oppgitt total = henger + last</span>
-              </label>
-              <input id="inHenger" inputmode="numeric" placeholder="f.eks. 27000" />
-            </div>
-
-            <div class="keepBox" id="keepHeBox">
-              <div>
-                <strong>Behold hengervekt</strong>
-              </div>
-              <input id="keepHe" type="checkbox" />
-            </div>
-          </div>
-
-          <div class="actions">
-            <button class="btn secondary" id="btnCheck" type="button">Sjekk</button>
-            <button class="btn primary" id="btnLegal" type="button">Gjør lovlig</button>
-            <button class="btn secondary" id="btnPdf" type="button">LAST NED PDF</button>
-          </div>
-
-          <div class="footnote">
-            Aktuell traktorvekt = oppgitt + <b>vektoverføring</b>.<br/>
-            HK-krav beregnes av vogntogets <b>oppgitte</b> vekt (tonn) × HK/tonn.<br/>
-            Hengeraksler (justert) = oppgitt hengervekt − <b>vektoverføring</b>.<br/><br/>
-            <b>Merk:</b> Dette er en regelkalkulator/veiledning. Sjekk alltid vognkort, kobling, aksellaster og lokale regler.<br/>
-            <b>Avrunding:</b> vekter rundes <b>opp</b> til nærmeste <b>100 kg</b> i visning og “krav”. Maks-verdier rundes <b>ned</b> til nærmeste <b>100 kg</b>.
-          </div>
-
-          <details>
-            <summary>
-              <span>Standardinnstillinger</span>
-              <span class="muted">Vektoverføring og HK/tonn</span>
-            </summary>
-            <div class="defaults">
-              <div class="field">
-                <label>
-                  <span>Vektoverføring (kg)</span>
-                  <span class="hint">Standard: 3000</span>
-                </label>
-                <input id="inS" inputmode="numeric" value="3000" />
-                <div class="muted" style="margin-top:6px;">
-                  Flytter vekt fra henger til traktor (fordeling). <b>Telles ikke dobbelt</b> i vogntog.
-                </div>
-              </div>
-
-              <div class="field">
-                <label>
-                  <span>HK per tonn</span>
-                  <span class="hint">Standard: 7</span>
-                </label>
-                <input id="inHKpt" inputmode="numeric" value="7" />
-                <div class="muted" style="margin-top:6px;">
-                  Brukes til å beregne HK-krav fra vogntogets vekt (tonn).
-                </div>
-              </div>
-            </div>
-          </details>
-        </div>
-      </section>
-
-      <!-- RESULT -->
-      <section class="card" id="resultCard">
-        <div class="card-h">
-          <h2>Resultat</h2>
-          <div class="muted" style="font-weight:900;">Sjekk</div>
-        </div>
-
-        <div class="card-b">
-          <div class="status" id="statusBox">
-            <div>
-              <div class="title" id="statusTitle">Mangler tall</div>
-              <div class="muted" id="statusText">Fyll inn minst ett felt for å se krav (min/max). Fyll inn flere for å sjekke om det går.</div>
-            </div>
-            <div class="badge warn" id="statusBadge">INFO</div>
-          </div>
-
-          <div class="minmax">
-            <div class="mm">
-              <div class="k">Min. traktorvekt (oppgitt)</div>
-              <div class="v" id="mmMinTr">—</div>
-              <div class="s" id="mmMinTrS">Krav for 1,5-regel (med vektoverføring)</div>
-            </div>
-            <div class="mm">
-              <div class="k">Min. HK</div>
-              <div class="v" id="mmMinHK">—</div>
-              <div class="s" id="mmMinHKS">Krav for effekt (HK/tonn)</div>
-            </div>
-            <div class="mm">
-              <div class="k">Maks henger (vognkort total)</div>
-              <div class="v" id="mmMaxHe">—</div>
-              <div class="s" id="mmMaxHeS">Begrenset av 1,5-regel / effekt</div>
-            </div>
-          </div>
-
-          <div class="triple">
-            <div class="triple-h">
-              <div class="t">Vekter (oppgitt → aktuell)</div>
-              <div class="r">Vektoverføring telles ikke dobbelt</div>
-            </div>
-
-            <div class="tri">
-              <div class="box ok" id="boxTr">
-                <h3>TRAKTOR</h3>
-                <div class="kv">
-                  <div class="k">Oppgitt</div><div class="v" id="trOpp">—</div>
-                  <div class="k">Aktuell</div><div class="v" id="trAkt">—</div>
-                </div>
-                <div class="tiny">Aktuell = oppgitt + vektoverføring.</div>
-              </div>
-
-              <div class="box warn" id="boxS">
-                <h3>VEKTOOVERFØRING</h3>
-                <div class="kv">
-                  <div class="k">Vektoverføring</div><div class="v" id="sVal">—</div>
-                </div>
-                <div class="tiny">Flyttes fra henger til traktor (fordeling). Telles ikke dobbelt.</div>
-              </div>
-
-              <div class="box ok" id="boxHe">
-                <h3>HENGER</h3>
-                <div class="kv">
-                  <div class="k">Oppgitt total</div><div class="v" id="heOpp">—</div>
-                  <div class="k">Aksler</div><div class="v" id="heAx">—</div>
-                </div>
-                <div class="tiny">Aksler = oppgitt − vektoverføring.</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="rules">
-            <div class="rules-h">
-              <div class="t">Regler</div>
-              <div class="r">Oppgitt / Krav / Margin</div>
-            </div>
-
-            <div class="ruleGrid">
-              <div class="ruleCard" id="rule15Card">
-                <div class="ruleTop">
-                  <div class="name">1,5-regel (hengeraksler vs grense)</div>
-                  <span class="badge warn" id="badge15">INFO</span>
-                </div>
-                <div class="stack">
-                  <div class="chip info" id="c15a">Aksler: —</div>
-                  <div class="chip info" id="c15g">Grense: —</div>
-                  <div class="chip info" id="c15m">Margin: —</div>
-                </div>
-              </div>
-
-              <div class="ruleCard" id="ruleHKCard">
-                <div class="ruleTop">
-                  <div class="name">Effekt (HK vs krav)</div>
-                  <span class="badge warn" id="badgeHK">INFO</span>
-                </div>
-                <div class="stack">
-                  <div class="chip info" id="cHKo">Oppgitt: —</div>
-                  <div class="chip info" id="cHKk">Krav: —</div>
-                  <div class="chip info" id="cHKm">Margin: —</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="summary">
-            <div class="lead">Oppsummering</div>
-            <div class="lines" id="sumLines">
-              <div><span>Tips:</span> Fyll inn tall for å få en enkel konklusjon her.</div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-    </div>
-  </div>
-
-  <!-- PDF libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
-    // ---------- Helpers ----------
-    const $ = (id) => document.getElementById(id);
+    (() => {
+      const TRANSFER_TONS = 3.0;
+      const HP_PER_TON = 7;
 
-    function parseNum(v){
-      if (v == null) return null;
-      const s = String(v).replace(/\s+/g,'').replace(',', '.');
-      if (s === '') return null;
-      const n = Number(s);
-      return Number.isFinite(n) ? n : null;
-    }
+      const $ = (id) => document.getElementById(id);
 
-    function ceil100(n){
-      return Math.ceil(n / 100) * 100;
-    }
-    function floor100(n){
-      return Math.floor(n / 100) * 100;
-    }
-    function fmtKg(n){
-      if (n == null || !Number.isFinite(n)) return '—';
-      const x = Math.round(n);
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' kg';
-    }
-    function fmtHK(n){
-      if (n == null || !Number.isFinite(n)) return '—';
-      const x = Math.round(n);
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' HK';
-    }
-    function fmtTonnFromKg(kg){
-      if (kg == null || !Number.isFinite(kg)) return '—';
-      const t = kg / 1000;
-      return (Math.round(t*10)/10).toFixed(1).replace('.', ',') + ' t';
-    }
+      const el = {
+        tractorWeight: $("tractorWeight"),
+        trailerWeight: $("trailerWeight"),
+        horsePower: $("horsePower"),
 
-    function setBadge(el, kind, text){
-      el.classList.remove('ok','warn','bad');
-      el.classList.add(kind);
-      el.textContent = text;
-    }
+        shellTractor: $("shellTractor"),
+        shellTrailer: $("shellTrailer"),
+        shellHp: $("shellHp"),
 
-    function setChip(el, kind, text){
-      el.classList.remove('ok','bad','info');
-      el.classList.add(kind);
-      el.textContent = text;
-    }
+        errorTractor: $("errorTractor"),
+        errorTrailer: $("errorTrailer"),
+        errorHp: $("errorHp"),
 
-    // ---------- Core rules ----------
-    function computeAll(){
-      const Tr_raw = parseNum($('inTraktor').value);
-      const HK_raw = parseNum($('inHK').value);
-      const He_raw = parseNum($('inHenger').value);
-      const S_raw  = parseNum($('inS').value);
-      const hkpt_raw = parseNum($('inHKpt').value);
+        btnFillMinTractor: $("btnFillMinTractor"),
+        btnFillMaxTrailer: $("btnFillMaxTrailer"),
+        btnFillMinHp: $("btnFillMinHp"),
+        btnReset: $("btnReset"),
+        btnCopySummary: $("btnCopySummary"),
+        btnPdf: $("btnPdf"),
 
-      const S = (S_raw == null ? 3000 : Math.max(0, S_raw));
-      const hkpt = (hkpt_raw == null ? 7 : Math.max(0.1, hkpt_raw));
+        bannerTitle: $("bannerTitle"),
+        bannerText: $("bannerText"),
+        bannerStatus: $("bannerStatus"),
+        statusHelpList: $("statusHelpList"),
 
-      // Rounded display/requirements:
-      const Tr = (Tr_raw == null ? null : Math.max(0, ceil100(Tr_raw)));
-      const He = (He_raw == null ? null : Math.max(0, ceil100(He_raw)));
-      const HK = (HK_raw == null ? null : Math.max(0, Math.round(HK_raw))); // HK to nearest 1
+        statMaxTrailer: $("statMaxTrailer"),
+        statMinTractor: $("statMinTractor"),
+        statMinHp: $("statMinHp"),
 
-      // Derived
-      const trAkt = (Tr == null ? null : Tr + S);
-      const heAx  = (He == null ? null : Math.max(0, He - S));
-      const lim15 = (trAkt == null ? null : 1.5 * trAkt);
+        panel15: $("panel15"),
+        panelHp: $("panelHp"),
+        status15: $("status15"),
+        statusHp: $("statusHp"),
 
-      const vtKg = (Tr != null && He != null) ? (Tr + He) : null;
-      const hkReq = (vtKg != null) ? Math.ceil(hkpt * (vtKg/1000)) : null;
+        v15TractorGiven: $("v15TractorGiven"),
+        v15TransferPlus: $("v15TransferPlus"),
+        v15TractorActual: $("v15TractorActual"),
+        v15TrailerTotal: $("v15TrailerTotal"),
+        v15TransferMinus: $("v15TransferMinus"),
+        v15Axles: $("v15Axles"),
+        v15Limit: $("v15Limit"),
+        v15CheckShort: $("v15CheckShort"),
+        v15Margin: $("v15Margin"),
+        help15: $("help15"),
 
-      // 1.5 result
-      let ok15 = null, margin15 = null;
-      if (heAx != null && lim15 != null){
-        margin15 = lim15 - heAx; // positive = ok
-        ok15 = margin15 >= 0;
-      }
+        vHpTractor: $("vHpTractor"),
+        vHpTrailer: $("vHpTrailer"),
+        vHpConvoy: $("vHpConvoy"),
+        vHpRequired: $("vHpRequired"),
+        vHpGiven: $("vHpGiven"),
+        vHpStatus: $("vHpStatus"),
+        vHpMargin: $("vHpMargin"),
+        helpHp: $("helpHp"),
 
-      // HK result
-      let okHK = null, marginHK = null;
-      if (HK != null && hkReq != null){
-        marginHK = HK - hkReq;
-        okHK = marginHK >= 0;
-      }
+        summaryMaxTrailer: $("summaryMaxTrailer"),
+        summaryMinTractor: $("summaryMinTractor"),
+        summaryMinHp: $("summaryMinHp"),
+        summary15: $("summary15"),
+        summaryHp: $("summaryHp"),
+        summaryText: $("summaryText"),
 
-      // Min tractor needed (oppgitt) if He known:
-      let minTr = null;
-      if (He != null){
-        const needTrAkt = (Math.max(0, He - S)) / 1.5;
-        const needTrOpp = needTrAkt - S;
-        minTr = ceil100(Math.max(0, needTrOpp));
-      }
+        summaryCard: $("summaryCard"),
+        summaryToggle: $("summaryToggle"),
+        summaryIcon: $("summaryIcon"),
 
-      // Min HK needed if Tr+He known
-      let minHK = null;
-      if (vtKg != null){
-        minHK = hkReq;
-      }
-
-      // Max henger allowed if Tr known (1.5 constraint):
-      let maxHe15 = null;
-      if (Tr != null){
-        maxHe15 = Math.max(0, (1.5 * (Tr + S) + S));
-        maxHe15 = floor100(maxHe15);
-      }
-      // Max henger allowed by HK if Tr + HK known:
-      let maxHeHK = null;
-      if (Tr != null && HK != null){
-        maxHeHK = (HK / hkpt) * 1000 - Tr;
-        maxHeHK = floor100(Math.max(0, maxHeHK));
-      }
-      let maxHe = null;
-      if (maxHe15 != null && maxHeHK != null) maxHe = Math.min(maxHe15, maxHeHK);
-      else if (maxHe15 != null) maxHe = maxHe15;
-      else if (maxHeHK != null) maxHe = maxHeHK;
-
-      return {
-        Tr_raw, HK_raw, He_raw,
-        Tr, HK, He,
-        S, hkpt,
-        trAkt, heAx, lim15,
-        vtKg, hkReq,
-        ok15, margin15,
-        okHK, marginHK,
-        minTr, minHK, maxHe,
-        maxHe15, maxHeHK
+        infoCollapse: $("infoCollapse"),
+        infoToggle: $("infoToggle"),
+        infoIcon: $("infoIcon")
       };
-    }
 
-    // ---------- UI update ----------
-    function resetGlow(){
-      ['rowTr','rowHK','rowHe'].forEach(id=>{
-        $(id).classList.remove('need','badField','okField');
-      });
-    }
-
-    function setFieldGlow(calc){
-      resetGlow();
-
-      const any = (calc.Tr != null || calc.He != null || calc.HK != null);
-      if (!any) return;
-
-      if (calc.HK != null && calc.Tr == null && calc.He == null){
-        $('rowTr').classList.add('need');
-        $('rowHe').classList.add('need');
-        return;
+      function parseTons(value) {
+        if (value == null) return null;
+        const cleaned = String(value)
+          .trim()
+          .replace(/\s/g, "")
+          .replace(",", ".")
+          .replace(/[^0-9.]/g, "");
+        if (!cleaned) return null;
+        const num = Number(cleaned);
+        return Number.isFinite(num) ? num : null;
       }
 
-      if ((calc.Tr != null && calc.He == null) || (calc.Tr == null && calc.He != null)){
-        if (calc.Tr == null) $('rowTr').classList.add('need');
-        if (calc.He == null) $('rowHe').classList.add('need');
+      function parseIntValue(value) {
+        if (value == null) return null;
+        const cleaned = String(value).replace(/\s/g, "").replace(/[^\d]/g, "");
+        if (!cleaned) return null;
+        const num = Number(cleaned);
+        return Number.isFinite(num) ? num : null;
       }
 
-      if (calc.Tr != null && calc.He != null && calc.HK == null){
-        $('rowHK').classList.add('need');
+      function roundToHundredKgFromTons(tons) {
+        if (tons == null || !Number.isFinite(tons)) return null;
+        return Math.round(tons * 10) / 10;
       }
 
-      if (calc.ok15 !== null){
-        $('rowHe').classList.add(calc.ok15 ? 'okField' : 'badField');
+      function formatTons(tons) {
+        if (tons == null || !Number.isFinite(tons)) return "—";
+        return new Intl.NumberFormat("nb-NO", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        }).format(tons) + " tonn";
       }
-      if (calc.okHK !== null){
-        $('rowHK').classList.add(calc.okHK ? 'okField' : 'badField');
+
+      function formatTonsSigned(tons) {
+        if (tons == null || !Number.isFinite(tons)) return "—";
+        const abs = new Intl.NumberFormat("nb-NO", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        }).format(Math.abs(tons)) + " tonn";
+        if (tons > 0) return `+ ${abs}`;
+        if (tons < 0) return `− ${abs}`;
+        return "0,0 tonn";
       }
-    }
 
-    function updateResult(calc){
-      const statusTitle = $('statusTitle');
-      const statusText  = $('statusText');
-      const statusBadge = $('statusBadge');
+      function formatTonsSignedPdf(tons) {
+        if (tons == null || !Number.isFinite(tons)) return "—";
+        const abs = new Intl.NumberFormat("nb-NO", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        }).format(Math.abs(tons)) + " tonn";
+        if (tons > 0) return `+ ${abs}`;
+        if (tons < 0) return `- ${abs}`;
+        return "0,0 tonn";
+      }
 
-      const any = (calc.Tr != null || calc.He != null || calc.HK != null);
+      function formatTonsInput(tons) {
+        if (tons == null || !Number.isFinite(tons)) return "";
+        return new Intl.NumberFormat("nb-NO", {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        }).format(tons);
+      }
 
-      if (!any){
-        statusTitle.textContent = 'Mangler tall';
-        statusText.textContent = 'Fyll inn minst ett felt for å se krav (min/max). Fyll inn flere for å sjekke om det går.';
-        setBadge(statusBadge, 'warn', 'INFO');
-      } else {
-        const can15 = (calc.ok15 !== null);
-        const canHK = (calc.okHK !== null);
+      function formatHK(value) {
+        if (value == null || !Number.isFinite(value)) return "—";
+        return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(Math.round(value)) + " HK";
+      }
 
-        const fullCheck = (can15 && canHK);
-        if (fullCheck){
-          if (calc.ok15 && calc.okHK){
-            const near = (Math.abs(calc.margin15) < 0.0001) || (calc.marginHK === 0);
-            statusTitle.textContent = near ? 'Nær grense' : 'Dette går';
-            statusText.textContent = near
-              ? 'Du er helt på grensen i én eller begge regler.'
-              : 'Du er innenfor både 1,5-regel og effekt (HK/tonn).';
-            setBadge(statusBadge, near ? 'warn' : 'ok', near ? 'NÆR' : 'OK');
-          } else {
-            statusTitle.textContent = 'Dette går IKKE';
-            let msg = [];
-            if (!calc.ok15){
-              const over = ceil100(Math.max(0, -calc.margin15));
-              msg.push(`1,5-regel (hard). Du mangler ${fmtKg(over)} på margin.`);
-            }
-            if (!calc.okHK){
-              const miss = Math.max(0, -calc.marginHK);
-              msg.push(`Effekt (HK/tonn). Du mangler ${Math.ceil(miss)} HK.`);
-            }
-            statusText.textContent = 'Stopper deg nå: ' + msg.join(' ');
-            setBadge(statusBadge, 'bad', 'IKKE TILLATT');
+      function formatHKSigned(value) {
+        if (value == null || !Number.isFinite(value)) return "—";
+        const abs = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(Math.abs(Math.round(value))) + " HK";
+        if (value > 0) return `+ ${abs}`;
+        if (value < 0) return `− ${abs}`;
+        return "0 HK";
+      }
+
+      function formatHKSignedPdf(value) {
+        if (value == null || !Number.isFinite(value)) return "—";
+        const abs = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(Math.abs(Math.round(value))) + " HK";
+        if (value > 0) return `+ ${abs}`;
+        if (value < 0) return `- ${abs}`;
+        return "0 HK";
+      }
+
+      function clearErrors() {
+        [el.shellTractor, el.shellTrailer, el.shellHp].forEach((node) => node.classList.remove("error"));
+        el.errorTractor.textContent = "";
+        el.errorTrailer.textContent = "";
+        el.errorHp.textContent = "";
+      }
+
+      function markError(field, message) {
+        if (field === "tractor") {
+          el.shellTractor.classList.add("error");
+          el.errorTractor.textContent = message;
+        }
+        if (field === "trailer") {
+          el.shellTrailer.classList.add("error");
+          el.errorTrailer.textContent = message;
+        }
+        if (field === "hp") {
+          el.shellHp.classList.add("error");
+          el.errorHp.textContent = message;
+        }
+      }
+
+      function setStatus(node, type, text) {
+        node.className = `status-pill ${type}`;
+        node.textContent = text;
+      }
+
+      function setSignedClass(node, value) {
+        node.classList.remove("negative", "positive");
+        if (value == null || !Number.isFinite(value)) return;
+        if (value < 0) node.classList.add("negative");
+        if (value > 0) node.classList.add("positive");
+      }
+
+      function setPanelState(panel, okState) {
+        panel.classList.remove("ok", "warn");
+        if (okState === true) panel.classList.add("ok");
+        if (okState === false) panel.classList.add("warn");
+      }
+
+      function normalizeInputsOnBlur(input) {
+        if (input === el.horsePower) {
+          const hp = parseIntValue(input.value);
+          input.value = hp == null ? "" : String(Math.round(hp));
+          return;
+        }
+        const tons = parseTons(input.value);
+        input.value = tons == null ? "" : formatTonsInput(roundToHundredKgFromTons(tons));
+      }
+
+      function getState() {
+        const tractorInput = parseTons(el.tractorWeight.value);
+        const trailerInput = parseTons(el.trailerWeight.value);
+        const hpInput = parseIntValue(el.horsePower.value);
+
+        const tractor = roundToHundredKgFromTons(tractorInput);
+        const trailer = roundToHundredKgFromTons(trailerInput);
+        const hp = hpInput == null ? null : Math.round(hpInput);
+
+        const maxTrailer = tractor != null
+          ? roundToHundredKgFromTons((1.5 * (tractor + TRANSFER_TONS)) + TRANSFER_TONS)
+          : null;
+
+        const minTractor = trailer != null
+          ? roundToHundredKgFromTons(((trailer - TRANSFER_TONS) / 1.5) - TRANSFER_TONS)
+          : null;
+
+        const totalConvoy = (tractor != null && trailer != null)
+          ? roundToHundredKgFromTons(tractor + trailer)
+          : null;
+
+        const minHp = totalConvoy != null
+          ? Math.ceil(totalConvoy * HP_PER_TON)
+          : null;
+
+        const tractorWithTransfer = tractor != null
+          ? roundToHundredKgFromTons(tractor + TRANSFER_TONS)
+          : null;
+
+        const trailerAxles = trailer != null
+          ? roundToHundredKgFromTons(trailer - TRANSFER_TONS)
+          : null;
+
+        const limit15 = tractorWithTransfer != null
+          ? roundToHundredKgFromTons(tractorWithTransfer * 1.5)
+          : null;
+
+        const ok15 = (tractor != null && trailer != null)
+          ? trailerAxles <= limit15
+          : null;
+
+        const margin15 = ok15 == null ? null : roundToHundredKgFromTons(limit15 - trailerAxles);
+
+        const okHp = (minHp != null && hp != null) ? hp >= minHp : null;
+        const marginHp = (minHp != null && hp != null) ? hp - minHp : null;
+
+        return {
+          tractor,
+          trailer,
+          hp,
+          maxTrailer,
+          minTractor,
+          totalConvoy,
+          minHp,
+          tractorWithTransfer,
+          trailerAxles,
+          limit15,
+          ok15,
+          margin15,
+          okHp,
+          marginHp
+        };
+      }
+
+      function buildSummaryText(s) {
+        const lines = [];
+        lines.push("INNDATA");
+        lines.push(`Traktor egenvekt: ${formatTons(s.tractor)}`);
+        lines.push(`Tilhenger totalvekt: ${formatTons(s.trailer)}`);
+        lines.push(`Effekt: ${formatHK(s.hp)}`);
+        lines.push(`Vektoverføring: ${formatTons(TRANSFER_TONS)}`);
+        lines.push("");
+
+        lines.push("BEREGNET");
+        lines.push(`Maks tilhenger: ${formatTons(s.maxTrailer)}`);
+        lines.push(`Min traktor: ${formatTons(s.minTractor)}`);
+        lines.push(`Min HK: ${formatHK(s.minHp)}`);
+        lines.push("");
+
+        lines.push("1,5-REGEL");
+        lines.push(`Traktor med vektoverføring: ${formatTons(s.tractorWithTransfer)}`);
+        lines.push(`Vekt på tilhengeraksler: ${formatTons(s.trailerAxles)}`);
+        lines.push(`1,5 × traktor med vektoverføring: ${formatTons(s.limit15)}`);
+        lines.push(`Vurdering: ${s.ok15 == null ? "—" : s.ok15 ? "OK" : "Ikke OK"}`);
+        lines.push(`Margin: ${s.margin15 == null ? "—" : formatTonsSigned(s.margin15)}`);
+        lines.push("");
+        if (s.tractor != null && s.trailer != null) {
+          lines.push(`Beregning: (${formatTons(s.tractor)} + ${formatTons(TRANSFER_TONS)}) × 1,5 = ${formatTons(s.limit15)}`);
+          lines.push(`Sammenlignes med: ${formatTons(s.trailer)} − ${formatTons(TRANSFER_TONS)} = ${formatTons(s.trailerAxles)}`);
+          lines.push("");
+        }
+
+        lines.push("HK/TONN");
+        lines.push(`Samlet vogntogvekt: ${formatTons(s.totalConvoy)}`);
+        lines.push(`HK-krav: ${formatHK(s.minHp)}`);
+        lines.push(`HK oppgitt: ${formatHK(s.hp)}`);
+        lines.push(`Vurdering: ${s.minHp == null ? "—" : s.hp == null ? "HK mangler" : s.okHp ? "OK" : "Ikke OK"}`);
+        lines.push(`Margin: ${s.marginHp == null ? "—" : formatHKSigned(s.marginHp)}`);
+        lines.push("");
+        if (s.totalConvoy != null) {
+          lines.push(`Beregning: ${formatTons(s.totalConvoy)} × ${HP_PER_TON} HK/tonn = ${formatHK(s.minHp)}`);
+        }
+
+        return lines.join("\n");
+      }
+
+      function updateBannerAndHelpers(s) {
+        el.statusHelpList.innerHTML = "";
+        if (s.tractor == null && s.trailer == null && s.hp == null) {
+          el.bannerTitle.textContent = "Klar til beregning";
+          el.bannerText.textContent = "Legg inn tall for å se resultat og vurdering.";
+          setStatus(el.bannerStatus, "muted", "—");
+          return;
+        }
+
+        const helpItems = [];
+
+        if (s.ok15 === false) {
+          const tooHeavy = s.trailer != null && s.maxTrailer != null ? roundToHundredKgFromTons(s.trailer - s.maxTrailer) : null;
+          const needTractor = s.minTractor != null ? s.minTractor : null;
+          if (tooHeavy != null && tooHeavy > 0) {
+            helpItems.push(`Tilhengeren er ${formatTons(tooHeavy)} for tung etter 1,5-regelen.`);
           }
+          if (needTractor != null && s.tractor != null && s.tractor < needTractor) {
+            helpItems.push(`Traktoren må være minst ${formatTons(needTractor)} for denne tilhengeren.`);
+          }
+        }
+
+        if (s.okHp === false && s.marginHp != null) {
+          helpItems.push(`Traktoren mangler ${formatHK(Math.abs(s.marginHp))} for dette vogntoget.`);
+        }
+
+        if (s.ok15 === true && (s.okHp === true || s.hp == null)) {
+          el.bannerTitle.textContent = "Dette går";
+          el.bannerText.textContent = s.hp == null
+            ? "Innenfor 1,5-regelen. Legg inn HK for full vurdering."
+            : "Innenfor både 1,5-regel og effektkrav.";
+          setStatus(el.bannerStatus, "ok", "OK");
+        } else if (s.ok15 === false || s.okHp === false) {
+          el.bannerTitle.textContent = "Må justeres";
+          el.bannerText.textContent = "Se hva som må justeres under.";
+          setStatus(el.bannerStatus, "warn", "Ikke OK");
         } else {
-          statusTitle.textContent = 'Mangler tall';
-          statusText.textContent = 'Du får min/max med 1 felt. Legg inn flere for å sjekke om det går.';
-          setBadge(statusBadge, 'warn', 'INFO');
+          el.bannerTitle.textContent = "Delvis grunnlag";
+          el.bannerText.textContent = "Noe kan beregnes allerede, men ikke alt.";
+          setStatus(el.bannerStatus, "muted", "Pågår");
         }
-      }
 
-      $('mmMinTr').textContent = (calc.minTr != null) ? fmtKg(calc.minTr) : '—';
-      $('mmMinHK').textContent = (calc.minHK != null) ? fmtHK(calc.minHK) : '—';
-      $('mmMaxHe').textContent = (calc.maxHe != null) ? fmtKg(calc.maxHe) : '—';
-
-      $('sVal').textContent  = fmtKg(ceil100(calc.S));
-      $('trOpp').textContent = (calc.Tr != null) ? fmtKg(calc.Tr) : '—';
-      $('trAkt').textContent = (calc.trAkt != null) ? fmtKg(ceil100(calc.trAkt)) : '—';
-      $('heOpp').textContent = (calc.He != null) ? fmtKg(calc.He) : '—';
-      $('heAx').textContent  = (calc.heAx != null) ? fmtKg(ceil100(calc.heAx)) : '—';
-
-      $('boxTr').classList.remove('ok','warn','bad');
-      $('boxHe').classList.remove('ok','warn','bad');
-      $('boxS').classList.remove('ok','warn','bad');
-
-      $('boxS').classList.add('warn');
-      if (calc.ok15 === false) $('boxHe').classList.add('bad');
-      else $('boxHe').classList.add('ok');
-      $('boxTr').classList.add('ok');
-
-      const badge15 = $('badge15');
-      const badgeHK = $('badgeHK');
-
-      if (calc.ok15 === null){
-        setBadge(badge15, 'warn', 'INFO');
-        setChip($('c15a'),'info', 'Aksler: —');
-        setChip($('c15g'),'info', 'Grense: —');
-        setChip($('c15m'),'info', 'Margin: —');
-      } else {
-        const ax = ceil100(calc.heAx);
-        const gr = ceil100(calc.lim15);
-        const mar = ceil100(Math.abs(calc.margin15));
-        setBadge(badge15, calc.ok15 ? 'ok' : 'bad', calc.ok15 ? 'OK' : 'IKKE OK');
-        setChip($('c15a'), calc.ok15 ? 'ok':'bad', `Aksler: ${fmtKg(ax)}`);
-        setChip($('c15g'), calc.ok15 ? 'ok':'bad', `Grense: ${fmtKg(gr)}`);
-        setChip($('c15m'), calc.ok15 ? 'ok':'bad', `Margin: ${calc.ok15 ? fmtKg(mar) : ('Mangler: ' + fmtKg(mar))}`);
-      }
-
-      if (calc.okHK === null){
-        setBadge(badgeHK, 'warn', 'INFO');
-        setChip($('cHKo'),'info', 'Oppgitt: —');
-        setChip($('cHKk'),'info', 'Krav: —');
-        setChip($('cHKm'),'info', 'Margin: —');
-      } else {
-        const marHK = Math.abs(calc.marginHK);
-        setBadge(badgeHK, calc.okHK ? 'ok' : 'bad', calc.okHK ? 'OK' : 'IKKE OK');
-        setChip($('cHKo'), calc.okHK ? 'ok':'bad', `Oppgitt: ${fmtHK(calc.HK)}`);
-        setChip($('cHKk'), calc.okHK ? 'ok':'bad', `Krav: ${fmtHK(calc.hkReq)}`);
-        setChip($('cHKm'), calc.okHK ? 'ok':'bad', `Margin: ${calc.okHK ? ('+ ' + Math.floor(marHK) + ' HK') : ('Mangler: ' + Math.ceil(marHK) + ' HK')}`);
-      }
-
-      const sum = $('sumLines');
-      sum.innerHTML = '';
-
-      if (calc.Tr != null){
-        if (calc.maxHe != null){
-          const line1 = document.createElement('div');
-          line1.innerHTML = `<span>Basert på din traktor:</span> Du kan trekke en henger (vognkort totalvekt) på inntil <b>${fmtKg(calc.maxHe)}</b>.`;
-          sum.appendChild(line1);
-        }
-      }
-
-      if (calc.He != null){
-        const needTr = calc.minTr;
-        const needHK = (calc.minHK != null) ? calc.minHK : null;
-
-        const line2 = document.createElement('div');
-        if (needTr != null && needHK != null){
-          line2.innerHTML = `<span>For å trekke en henger på</span> <b>${fmtKg(calc.He)}</b> trenger du minst <b>${fmtKg(needTr)}</b> traktor (oppgitt) og <b>${fmtHK(needHK)}</b>.`;
-        } else if (needTr != null && calc.Tr == null){
-          line2.innerHTML = `<span>For å trekke en henger på</span> <b>${fmtKg(calc.He)}</b> trenger du minst <b>${fmtKg(needTr)}</b> traktor (oppgitt) (1,5-regel).`;
-        } else {
-          line2.innerHTML = `<span>Tips:</span> Legg inn flere felt for å få krav for både 1,5 og effekt.`;
-        }
-        sum.appendChild(line2);
-      }
-
-      if (calc.Tr != null && calc.He != null){
-        const vt = calc.Tr + calc.He;
-        const vtLine = document.createElement('div');
-        vtLine.innerHTML = `<span>Vogntog (oppgitt):</span> <b>${fmtKg(vt)}</b> (${fmtTonnFromKg(vt)}).`;
-        sum.appendChild(vtLine);
-
-        const trA = ceil100(calc.trAkt);
-        const heA = ceil100(calc.heAx);
-        const conf = document.createElement('div');
-        conf.innerHTML = `<span>Aktuell / aksler:</span> Traktor aktuell <b>${fmtKg(trA)}</b> · Hengeraksler <b>${fmtKg(heA)}</b> (vektoverføring ${fmtKg(ceil100(calc.S))}).`;
-        sum.appendChild(conf);
-      }
-
-      if (!sum.children.length){
-        const d = document.createElement('div');
-        d.innerHTML = `<span>Tips:</span> Fyll inn tall for å få en enkel konklusjon her.`;
-        sum.appendChild(d);
-      }
-    }
-
-    // ---------- Actions ----------
-    function updateUI(){
-      const calc = computeAll();
-      setFieldGlow(calc);
-      updateResult(calc);
-    }
-
-    function validateKeepSelection(){
-      const a = $('keepTr').checked;
-      const b = $('keepHK').checked;
-      const c = $('keepHe').checked;
-      const count = (a?1:0) + (b?1:0) + (c?1:0);
-      return { a,b,c,count };
-    }
-
-    function doGjorLovlig(){
-      const sel = validateKeepSelection();
-      if (sel.count === 0 || sel.count === 3){
-        ['keepTrBox','keepHKBox','keepHeBox'].forEach(id=>{
-          $(id).style.boxShadow = '0 0 0 3px rgba(59,130,246,.25)';
-          setTimeout(()=> $(id).style.boxShadow = '', 800);
+        helpItems.forEach((text) => {
+          const div = document.createElement("div");
+          div.className = "status-help warn";
+          div.textContent = text;
+          el.statusHelpList.appendChild(div);
         });
-        alert('Velg 1–2 ting du vil beholde (ikke 0 og ikke alle 3), så kan "Gjør lovlig" justere resten.');
-        return;
       }
 
-      const calc = computeAll();
-      const Tr = calc.Tr;
-      const He = calc.He;
-      const HK = calc.HK;
-      const S  = calc.S;
-      const hkpt = calc.hkpt;
+      function updateInputWarnings(s) {
+        clearErrors();
 
-      function setTr(v){ $('inTraktor').value = (v==null?'':String(v)); }
-      function setHe(v){ $('inHenger').value  = (v==null?'':String(v)); }
-      function setHK(v){ $('inHK').value      = (v==null?'':String(v)); }
+        if (s.ok15 === false) {
+          if (s.maxTrailer != null && s.trailer != null && s.trailer > s.maxTrailer) {
+            markError("trailer", `${formatTons(roundToHundredKgFromTons(s.trailer - s.maxTrailer))} over beregnet grense.`);
+          }
+          if (s.minTractor != null && s.tractor != null && s.tractor < s.minTractor) {
+            markError("tractor", `Trenger minst ${formatTons(s.minTractor)}.`);
+          }
+        }
 
-      function maxHeGivenTrAndHK(tr, hk){
-        const max15 = floor100(Math.max(0, (1.5*(tr+S) + S)));
-        const maxhk = floor100(Math.max(0, (hk/hkpt)*1000 - tr));
-        return Math.min(max15, maxhk);
-      }
-      function minHKGivenTrAndHe(tr, he){
-        const vt = tr + he;
-        return Math.ceil(hkpt * (vt/1000));
-      }
-      function minTrGivenHe(he){
-        const needTrAkt = Math.max(0, he - S) / 1.5;
-        const needTrOpp = needTrAkt - S;
-        return ceil100(Math.max(0, needTrOpp));
+        if (s.okHp === false && s.marginHp != null) {
+          markError("hp", `Mangler ${formatHK(Math.abs(s.marginHp))}.`);
+        }
       }
 
-      if (sel.a && sel.b && !sel.c){
-        if (Tr == null || HK == null){
-          alert('Fyll inn traktorvekt og HK for å bruke "Behold traktorvekt + Behold HK".');
+      function updatePanels(s) {
+        el.statMaxTrailer.textContent = formatTons(s.maxTrailer);
+        el.statMinTractor.textContent = formatTons(s.minTractor);
+        el.statMinHp.textContent = formatHK(s.minHp);
+
+        el.v15TractorGiven.textContent = formatTons(s.tractor);
+        el.v15TransferPlus.textContent = (s.tractor != null || s.trailer != null) ? formatTonsSigned(TRANSFER_TONS) : "—";
+        el.v15TractorActual.textContent = formatTons(s.tractorWithTransfer);
+
+        el.v15TrailerTotal.textContent = formatTons(s.trailer);
+        el.v15TransferMinus.textContent = (s.tractor != null || s.trailer != null) ? formatTonsSigned(-TRANSFER_TONS) : "—";
+        el.v15Axles.textContent = formatTons(s.trailerAxles);
+
+        el.v15Limit.textContent = formatTons(s.limit15);
+        el.v15CheckShort.textContent = s.ok15 == null ? "—" : (s.ok15 ? "OK" : "Ikke OK");
+        el.v15Margin.textContent = s.margin15 == null ? "—" : formatTonsSigned(s.margin15);
+        setSignedClass(el.v15Margin, s.margin15);
+
+        setPanelState(el.panel15, s.ok15);
+        if (s.ok15 == null) setStatus(el.status15, "muted", "Mangler");
+        else if (s.ok15) setStatus(el.status15, "ok", "OK");
+        else setStatus(el.status15, "warn", "Ikke OK");
+
+        if (s.ok15 === false && s.margin15 != null) {
+          const excess = Math.abs(s.margin15);
+          el.help15.style.display = "";
+          el.help15.className = "inline-help warn";
+          el.help15.textContent = `Tilhengeren er ${formatTons(excess)} for tung etter 1,5-regelen.`;
+        } else if (s.ok15 === true) {
+          el.help15.style.display = "";
+          el.help15.className = "inline-help";
+          el.help15.textContent = "Innenfor 1,5-regelen.";
+        } else {
+          el.help15.style.display = "none";
+        }
+
+        el.vHpTractor.textContent = formatTons(s.tractor);
+        el.vHpTrailer.textContent = formatTons(s.trailer);
+        el.vHpConvoy.textContent = formatTons(s.totalConvoy);
+        el.vHpRequired.textContent = formatHK(s.minHp);
+        el.vHpGiven.textContent = formatHK(s.hp);
+        el.vHpStatus.textContent = s.minHp == null ? "—" : (s.hp == null ? "HK mangler" : (s.okHp ? "OK" : "Ikke OK"));
+        el.vHpMargin.textContent = s.marginHp == null ? "—" : formatHKSigned(s.marginHp);
+        setSignedClass(el.vHpMargin, s.marginHp);
+
+        setPanelState(el.panelHp, s.okHp);
+        if (s.minHp == null) setStatus(el.statusHp, "muted", "Mangler");
+        else if (s.hp == null) setStatus(el.statusHp, "muted", "HK mangler");
+        else if (s.okHp) setStatus(el.statusHp, "ok", "OK");
+        else setStatus(el.statusHp, "warn", "Ikke OK");
+
+        if (s.okHp === false && s.marginHp != null) {
+          el.helpHp.style.display = "";
+          el.helpHp.className = "inline-help warn";
+          el.helpHp.textContent = `Traktoren mangler ${formatHK(Math.abs(s.marginHp))} for dette vogntoget.`;
+        } else if (s.okHp === true) {
+          el.helpHp.style.display = "";
+          el.helpHp.className = "inline-help";
+          el.helpHp.textContent = "Innenfor effektkravet.";
+        } else if (s.hp == null && s.minHp != null) {
+          el.helpHp.style.display = "";
+          el.helpHp.className = "inline-help";
+          el.helpHp.textContent = `For dette vogntoget trengs minst ${formatHK(s.minHp)}.`;
+        } else {
+          el.helpHp.style.display = "none";
+        }
+      }
+
+      function updateSummary(s) {
+        el.summaryMaxTrailer.textContent = formatTons(s.maxTrailer);
+        el.summaryMinTractor.textContent = formatTons(s.minTractor);
+        el.summaryMinHp.textContent = formatHK(s.minHp);
+        el.summary15.textContent = s.ok15 == null ? "—" : (s.ok15 ? "OK" : "Ikke OK");
+        el.summaryHp.textContent = s.minHp == null ? "—" : (s.hp == null ? "HK mangler" : (s.okHp ? "OK" : "Ikke OK"));
+        el.summaryText.textContent = buildSummaryText(s);
+      }
+
+      function updateAll() {
+        const s = getState();
+        updateBannerAndHelpers(s);
+        updatePanels(s);
+        updateSummary(s);
+        updateInputWarnings(s);
+      }
+
+      function handleInput() {
+        updateAll();
+      }
+
+      function handleBlur(e) {
+        const input = e.target;
+        if (!(input instanceof HTMLInputElement)) return;
+        normalizeInputsOnBlur(input);
+        updateAll();
+      }
+
+      function fillMinTractor() {
+        clearErrors();
+        const trailer = parseTons(el.trailerWeight.value);
+        if (trailer == null) {
+          markError("trailer", "Oppgi tilhengervekt for å beregne minimum traktorvekt.");
+          updateAll();
           return;
         }
-        const newHe = maxHeGivenTrAndHK(Tr, HK);
-        setHe(newHe);
-        updateUI();
-        return;
+        const s = getState();
+        el.tractorWeight.value = formatTonsInput(s.minTractor);
+        updateAll();
       }
 
-      if (sel.a && !sel.b && sel.c){
-        if (Tr == null || He == null){
-          alert('Fyll inn traktorvekt og hengervekt for å bruke "Behold traktorvekt + Behold hengervekt".');
+      function fillMaxTrailer() {
+        clearErrors();
+        const tractor = parseTons(el.tractorWeight.value);
+        if (tractor == null) {
+          markError("tractor", "Oppgi traktorvekt for å beregne maks tilhengervekt.");
+          updateAll();
           return;
         }
-        const heAx = Math.max(0, He - S);
-        const lim15 = 1.5*(Tr+S);
-        if (heAx > lim15){
-          alert('Ulovlig etter 1,5-regel, og du har valgt å beholde både traktorvekt og hengervekt. Endre avhuking eller juster tallene.');
+        const s = getState();
+        el.trailerWeight.value = formatTonsInput(s.maxTrailer);
+        updateAll();
+      }
+
+      function fillMinHp() {
+        clearErrors();
+        const tractor = parseTons(el.tractorWeight.value);
+        const trailer = parseTons(el.trailerWeight.value);
+
+        let hasError = false;
+        if (tractor == null) {
+          markError("tractor", "Oppgi traktorvekt for å beregne minimum HK.");
+          hasError = true;
+        }
+        if (trailer == null) {
+          markError("trailer", "Oppgi tilhengervekt for å beregne minimum HK.");
+          hasError = true;
+        }
+        if (hasError) {
+          updateAll();
           return;
         }
-        const needHK = minHKGivenTrAndHe(Tr, He);
-        setHK(needHK);
-        updateUI();
-        return;
+
+        const s = getState();
+        el.horsePower.value = s.minHp == null ? "" : String(s.minHp);
+        updateAll();
       }
 
-      if (!sel.a && sel.b && sel.c){
-        if (He == null || HK == null){
-          alert('Fyll inn hengervekt og HK for å bruke "Behold hengervekt + Behold HK".');
-          return;
+      function resetAll() {
+        clearErrors();
+        el.tractorWeight.value = "";
+        el.trailerWeight.value = "";
+        el.horsePower.value = "";
+        updateAll();
+      }
+
+      async function copySummary() {
+        try {
+          await navigator.clipboard.writeText(el.summaryText.textContent);
+          const oldText = el.btnCopySummary.textContent;
+          el.btnCopySummary.textContent = "Kopiert";
+          setTimeout(() => {
+            el.btnCopySummary.textContent = oldText;
+          }, 1200);
+        } catch {
+          alert("Klarte ikke å kopiere sammendraget.");
         }
-        const minTr = minTrGivenHe(He);
-        const maxTr = floor100(Math.max(0, (HK/hkpt)*1000 - He));
-        if (minTr > maxTr){
-          alert('Dette lar seg ikke gjøre med valgt hengervekt og HK (effekt og 1,5-regel kolliderer). Øk HK eller reduser hengervekt.');
-          return;
-        }
-        setTr(minTr);
-        updateUI();
-        return;
       }
 
-      if (sel.a && !sel.b && !sel.c){
-        if (Tr == null){
-          alert('Fyll inn traktorvekt først.');
-          return;
-        }
-        const max15 = floor100(Math.max(0, (1.5*(Tr+S) + S)));
-        const needHK = minHKGivenTrAndHe(Tr, max15);
-        setHe(max15);
-        setHK(needHK);
-        updateUI();
-        return;
+      function drawPdfRow(doc, leftX, rightX, y, label, value, opts = {}) {
+        const labelColor = opts.labelColor || "#64748b";
+        const valueColor = opts.valueColor || "#0f172a";
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(labelColor);
+        doc.text(label, leftX, y);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(valueColor);
+        doc.text(value, rightX, y, { align: "right" });
       }
 
-      if (!sel.a && sel.b && !sel.c){
-        alert('Med bare HK må du også fylle inn enten traktorvekt eller hengervekt for å få et meningsfullt “lovlig”-nivå.');
-        return;
-      }
+      function drawPdfBox(doc, x, y, w, title, rows) {
+        const pad = 12;
+        const rowGap = 18;
+        const height = pad + 22 + rows.length * rowGap + 8;
 
-      if (!sel.a && !sel.b && sel.c){
-        if (He == null){
-          alert('Fyll inn hengervekt først.');
-          return;
-        }
-        const trMin = minTrGivenHe(He);
-        const needHK = minHKGivenTrAndHe(trMin, He);
-        setTr(trMin);
-        setHK(needHK);
-        updateUI();
-        return;
-      }
+        doc.setDrawColor(216, 221, 227);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(x, y, w, height, 12, 12, "FD");
 
-      updateUI();
-    }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor("#2b2f33");
+        doc.text(title, x + pad, y + 16);
 
-    // ---------- OFFSCREEN PDF (no visible layout change) ----------
-    function buildPdfHtml(){
-      const styles = Array.from(document.querySelectorAll('style'))
-        .map(s => s.textContent || '')
-        .join('\n');
+        let rowY = y + 34;
+        const leftX = x + pad;
+        const rightX = x + w - pad;
 
-      const topbar = document.querySelector('.topbar')?.outerHTML || '';
-      const wrap = document.querySelector('.wrap')?.outerHTML || '';
-
-      const pdfOnlyCss = `
-        body{ background:#ffffff !important; }
-        .topbar{ position:static !important; }
-        .wrap{ max-width:1100px !important; margin:14px auto !important; padding:0 14px 18px !important; }
-        .grid{ grid-template-columns:1fr !important; gap:16px !important; }
-      `;
-
-      return `<!doctype html>
-<html lang="no">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PDF</title>
-<style>${styles}\n${pdfOnlyCss}</style>
-</head>
-<body>
-<div id="pdfRoot">${topbar}${wrap}</div>
-</body>
-</html>`;
-    }
-
-    async function openPdf(){
-      const btn = $('btnPdf');
-      const prevText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'LAGER PDF…';
-
-      let iframe = document.getElementById('pdfFrame');
-      if (!iframe){
-        iframe = document.createElement('iframe');
-        iframe.id = 'pdfFrame';
-        iframe.setAttribute('aria-hidden','true');
-        iframe.tabIndex = -1;
-        document.body.appendChild(iframe);
-      }
-
-      try{
-        const html = buildPdfHtml();
-        const doc = iframe.contentDocument;
-        doc.open();
-        doc.write(html);
-        doc.close();
-
-        await new Promise((resolve) => {
-          const done = () => resolve();
-          iframe.onload = done;
-          setTimeout(done, 150);
+        rows.forEach((row) => {
+          drawPdfRow(doc, leftX, rightX, rowY, row.label, row.value);
+          rowY += rowGap;
         });
 
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        return y + height;
+      }
 
+      function savePdf() {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          alert("PDF-biblioteket ble ikke lastet inn.");
+          return;
+        }
+
+        const s = getState();
         const { jsPDF } = window.jspdf;
-        const pdfRoot = iframe.contentDocument.getElementById('pdfRoot');
+        const doc = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
 
-        const canvas = await html2canvas(pdfRoot, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          windowWidth: 1100
-        });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 38;
+        const contentWidth = pageWidth - margin * 2;
+        let y = 42;
 
-        const imgData = canvas.toDataURL('image/png');
-
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
-
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft > 0){
-          position = position - pageHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+        function ensureSpace(nextHeight) {
+          if (y + nextHeight > pageHeight - 40) {
+            doc.addPage();
+            y = 42;
+          }
         }
 
-        pdf.save('tilhengerkalkulator.pdf');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = prevText;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor("#2b2f33");
+        doc.text("Tilhengerkalkulator", margin, y);
+
+        y += 18;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor("#64748b");
+        doc.text("Veiledende oppsummering", margin, y);
+        y += 18;
+
+        ensureSpace(90);
+        const topWidth = (contentWidth - 16) / 3;
+        drawPdfBox(doc, margin, y, topWidth, "Maks tilhenger", [
+          { label: "Oppgitt total", value: formatTons(s.maxTrailer) }
+        ]);
+        drawPdfBox(doc, margin + topWidth + 8, y, topWidth, "Min traktor", [
+          { label: "Oppgitt", value: formatTons(s.minTractor) }
+        ]);
+        drawPdfBox(doc, margin + (topWidth + 8) * 2, y, topWidth, "Min HK", [
+          { label: "Krav", value: formatHK(s.minHp) }
+        ]);
+        y += 92;
+
+        ensureSpace(170);
+        y = drawPdfBox(doc, margin, y, contentWidth, "Inndata", [
+          { label: "Traktor egenvekt", value: formatTons(s.tractor) },
+          { label: "Tilhenger totalvekt", value: formatTons(s.trailer) },
+          { label: "Effekt", value: formatHK(s.hp) },
+          { label: "Vektoverføring", value: formatTons(TRANSFER_TONS) },
+          { label: "HK per tonn", value: String(HP_PER_TON) }
+        ]) + 12;
+
+        ensureSpace(200);
+        y = drawPdfBox(doc, margin, y, contentWidth, "1,5-regel", [
+          { label: "Traktor med vektoverføring", value: formatTons(s.tractorWithTransfer) },
+          { label: "Vekt på tilhengeraksler", value: formatTons(s.trailerAxles) },
+          { label: "1,5 × traktor med vektoverføring", value: formatTons(s.limit15) },
+          { label: "Vurdering", value: s.ok15 == null ? "—" : (s.ok15 ? "OK" : "Ikke OK") },
+          { label: "Margin", value: s.margin15 == null ? "—" : formatTonsSignedPdf(s.margin15) },
+          { label: "Beregning", value: (s.tractor != null && s.trailer != null) ? `(${formatTons(s.tractor)} + ${formatTons(TRANSFER_TONS)}) × 1,5` : "—" }
+        ]) + 12;
+
+        ensureSpace(200);
+        y = drawPdfBox(doc, margin, y, contentWidth, "Effekt (HK/tonn)", [
+          { label: "Samlet vogntogvekt", value: formatTons(s.totalConvoy) },
+          { label: "HK-krav", value: formatHK(s.minHp) },
+          { label: "HK oppgitt", value: formatHK(s.hp) },
+          { label: "Vurdering", value: s.minHp == null ? "—" : s.hp == null ? "HK mangler" : s.okHp ? "OK" : "Ikke OK" },
+          { label: "Margin", value: s.marginHp == null ? "—" : formatHKSignedPdf(s.marginHp) },
+          { label: "Beregning", value: s.totalConvoy != null ? `${formatTons(s.totalConvoy)} × ${HP_PER_TON} HK/tonn` : "—" }
+        ]) + 12;
+
+        ensureSpace(110);
+        y = drawPdfBox(doc, margin, y, contentWidth, "Merknad", [
+          { label: "Viktig", value: "Denne kalkulatoren er veiledende etter generelle regler." },
+          { label: "Kontroller", value: "Vognkort, førerkort og andre begrensninger." }
+        ]) + 8;
+
+        doc.save("tilhengerkalkulator.pdf");
       }
-    }
 
-    // ---------- Events ----------
-    ['inTraktor','inHK','inHenger','inS','inHKpt'].forEach(id=>{
-      $(id).addEventListener('input', ()=>{
-        if ($('live').checked) updateUI();
+      function setupToggles() {
+        el.summaryToggle.addEventListener("click", () => {
+          const open = el.summaryCard.classList.toggle("open");
+          el.summaryToggle.setAttribute("aria-expanded", String(open));
+          el.summaryIcon.textContent = open ? "−" : "+";
+          el.summaryToggle.querySelector("strong").textContent = open
+            ? "▲ Skjul sammendragsdetaljer"
+            : "▼ Vis sammendragsdetaljer";
+        });
+
+        el.infoToggle.addEventListener("click", () => {
+          const open = el.infoCollapse.classList.toggle("open");
+          el.infoToggle.setAttribute("aria-expanded", String(open));
+          el.infoIcon.textContent = open ? "−" : "+";
+          el.infoToggle.querySelector("strong").textContent = open
+            ? "▲ Skjul forklaring og formler"
+            : "▼ Vis forklaring og formler";
+        });
+      }
+
+      [el.tractorWeight, el.trailerWeight, el.horsePower].forEach((input) => {
+        input.addEventListener("input", handleInput);
+        input.addEventListener("blur", handleBlur);
       });
-    });
-    $('btnCheck').addEventListener('click', updateUI);
-    $('btnLegal').addEventListener('click', doGjorLovlig);
-    $('btnPdf').addEventListener('click', openPdf);
 
-    $('btnReset').addEventListener('click', ()=>{
-      $('inTraktor').value = '';
-      $('inHK').value = '';
-      $('inHenger').value = '';
-      $('keepTr').checked = false;
-      $('keepHK').checked = false;
-      $('keepHe').checked = false;
-      updateUI();
-    });
+      el.btnFillMinTractor.addEventListener("click", fillMinTractor);
+      el.btnFillMaxTrailer.addEventListener("click", fillMaxTrailer);
+      el.btnFillMinHp.addEventListener("click", fillMinHp);
+      el.btnReset.addEventListener("click", resetAll);
+      el.btnCopySummary.addEventListener("click", copySummary);
+      el.btnPdf.addEventListener("click", savePdf);
 
-    // Initial
-    updateUI();
+      setupToggles();
+      updateAll();
+    })();
   </script>
 </body>
 </html>
