@@ -140,7 +140,6 @@
 
     .dark-card .section-meta { color: rgba(255,255,255,.72); }
 
-    /* INPUT */
     .input-card {
       background: var(--brand-dark);
       border-color: #3b4045;
@@ -282,7 +281,6 @@
       font-weight: 700;
     }
 
-    /* SUMMARY */
     .summary-card {
       background: var(--brand-dark);
       color: #fff;
@@ -404,7 +402,6 @@
       word-break: break-word;
     }
 
-    /* RESULT */
     .result-card { padding: 10px; }
 
     .result-topline {
@@ -1629,16 +1626,39 @@
       }
 
       async function copySummary() {
+        const text = el.summaryText.textContent;
+
         try {
-          await navigator.clipboard.writeText(el.summaryText.textContent);
-          const oldText = el.btnCopySummary.textContent;
-          el.btnCopySummary.textContent = "Kopiert";
-          setTimeout(() => {
-            el.btnCopySummary.textContent = oldText;
-          }, 1200);
+          await navigator.clipboard.writeText(text);
         } catch {
-          alert("Klarte ikke å kopiere sammendraget.");
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+
+          textarea.select();
+          textarea.setSelectionRange(0, textarea.value.length);
+
+          try {
+            const copied = document.execCommand("copy");
+            if (!copied) {
+              throw new Error("copy failed");
+            }
+          } catch (err) {
+            alert("Klarte ikke å kopiere sammendraget.");
+            document.body.removeChild(textarea);
+            return;
+          }
+
+          document.body.removeChild(textarea);
         }
+
+        const oldText = el.btnCopySummary.textContent;
+        el.btnCopySummary.textContent = "Kopiert";
+        setTimeout(() => {
+          el.btnCopySummary.textContent = oldText;
+        }, 1200);
       }
 
       function drawPdfRow(doc, leftX, rightX, y, label, value, opts = {}) {
